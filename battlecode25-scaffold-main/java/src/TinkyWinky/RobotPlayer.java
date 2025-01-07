@@ -130,8 +130,15 @@ public class RobotPlayer {
         }
     }
     public static void runPre200Soldier(RobotController rc) throws GameActionException{
-        MapInfo[] robotInfoArr = rc.senseNearbyMapInfos();
-        System.out.println(robotInfoArr.toString());
+        MapLocation[] robotRuinsArr = rc.senseNearbyRuins(1000); //no clue what the robot's vision radius is. 
+		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(1000);
+		if(robotRuinsArr.length > 0){
+			moveTo(rc, robotRuinsArr[0]);
+			rc.setIndicatorString("Moving to Ruins");
+		} else{
+			flee(rc, nearbyRobots[0].location);
+			rc.setIndicatorString("Fleeing!");
+		}
     }
     /**
      * Run a single turn for towers.
@@ -196,7 +203,7 @@ public class RobotPlayer {
         if (curRuin != null){
             MapLocation targetLoc = curRuin.getMapLocation();
             moveTo(rc, targetLoc);
-            rc.setIndicatorLine(here,targetLoc,0,0,0);
+            rc.setIndicatorLine(rc.getLocation(),targetLoc,0,0,0);
             // Mark the pattern we need to draw to build a tower here if we haven't already.
             Direction dir = rc.getLocation().directionTo(targetLoc);
             MapLocation shouldBeMarked = curRuin.getMapLocation().subtract(dir);
