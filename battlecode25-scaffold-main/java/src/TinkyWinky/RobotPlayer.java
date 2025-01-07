@@ -139,6 +139,8 @@ public class RobotPlayer {
 			flee(rc, nearbyRobots[0].location);
 			rc.setIndicatorString("Fleeing!");
 		}
+		//Start Painting the Pattern Around the Tower, Build Resource Tower if possible.
+
     }
     /**
      * Run a single turn for towers.
