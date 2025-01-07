@@ -172,7 +172,7 @@ public class RobotPlayer {
     public static void runSoldier(RobotController rc) throws GameActionException{
         MapLocation here = rc.getLocation();
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1,rc.getTeam());
-        RobotInfo nearestMopper;
+        RobotInfo nearestMopper = null;
         int nMopDist = 9999;
         for (RobotInfo aBot : nearbyAllies) {
             int botDist = aBot.location.distanceSquaredTo(here);
@@ -181,7 +181,9 @@ public class RobotPlayer {
                 nearestMopper = aBot;
             }
         }
-        //if (rc.getPaint())
+        if (rc.getPaint() < 100 && nearestMopper != null) {
+            followMopper(rc,nearestMopper.location);
+        }
         // Sense information about all visible nearby tiles.
         MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
         // Search for a nearby ruin to complete.
@@ -220,7 +222,6 @@ public class RobotPlayer {
 
         // Move and attack randomly if no objective.
         Direction dir = directions[rng.nextInt(directions.length)];
-        MapLocation nextLoc = rc.getLocation().add(dir);
         if (rc.canMove(dir)){
             rc.move(dir);
         }
@@ -232,13 +233,14 @@ public class RobotPlayer {
         }
     }
 
-    public static boolean returnToSource(RobotController rc) {
+    public static boolean returnToSource(RobotController rc, MapLocation loc) throws GameActionException {
         // TODO: Follow increasing density to find paint tower
-        if (followMopper(rc)) {return true;};
+        if (followMopper(rc, loc)) {return true;}
         return false;
     }
 
-    public static boolean followMopper(RobotController rc) {
+    public static boolean followMopper(RobotController rc, MapLocation loc) throws GameActionException{
+        if (moveTo(rc, loc)) {return true;}
         return false;
     }
 
