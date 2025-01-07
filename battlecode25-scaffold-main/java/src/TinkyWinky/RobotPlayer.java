@@ -181,17 +181,25 @@ public class RobotPlayer {
     public static void runSoldier(RobotController rc) throws GameActionException{
         MapLocation here = rc.getLocation();
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1,rc.getTeam());
+		RobotInfo nearestTower = null;
+        int nTowerDist = 9999;
         RobotInfo nearestMopper = null;
         int nMopDist = 9999;
         for (RobotInfo aBot : nearbyAllies) {
             int botDist = aBot.location.distanceSquaredTo(here);
-            if (botDist < nMopDist && aBot.type == UnitType.MOPPER){
+			if (botDist < nTowerDist && (aBot.type != UnitType.SOLDIER && aBot.type != UnitType.SPLASHER && aBot.type != UnitType.MOPPER)){
+                nTowerDist = botDist;
+                nearestTower = aBot;
+            }
+			if (botDist < nMopDist && aBot.type == UnitType.MOPPER){
                 nMopDist = botDist;
                 nearestMopper = aBot;
             }
         }
-        if (rc.getPaint() < 100 && nearestMopper != null) {
-            followMopper(rc,nearestMopper.location);
+		if (rc.getPaint() < 105 && nearestTower != null) {
+            refill(rc,nearestTower.location);
+        } else if (rc.getPaint() < 105 && nearestMopper != null) {
+            moveTo(rc,nearestMopper.location);
         }
         // Sense information about all visible nearby tiles.
         MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
@@ -242,17 +250,14 @@ public class RobotPlayer {
         }
     }
 
-    public static boolean returnToSource(RobotController rc, MapLocation loc) throws GameActionException {
-        // TODO: Follow increasing density to find paint tower
-        if (followMopper(rc, loc)) {return true;}
-        return false;
+    public static boolean refill(RobotController rc, MapLocation loc) throws GameActionException {
+        // TODO: Follow increasing density to find tower
+		if (rc.canTransferPaint(loc, 200 - rc.getPaint())) {
+			rc.transferPaint(loc, 200 - rc.getPaint());
+			return true;
+		} 
+		return moveTo(rc, loc);
     }
-
-    public static boolean followMopper(RobotController rc, MapLocation loc) throws GameActionException{
-        if (moveTo(rc, loc)) {return true;}
-        return false;
-    }
-
 
     /**
      * Run a single turn for a Mopper.
