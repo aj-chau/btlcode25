@@ -77,14 +77,12 @@ public class RobotPlayer {
                 // use different strategies on different robots. If you wish, you are free to rewrite
                 // this into a different control structure!
                 if (turnCount < 200){
-					rc.setIndicatorString("pre200");
                     switch (rc.getType()){
                         case SOLDIER: runPre200Soldier(rc); break; 
                         case MOPPER: runMopper(rc); break;
                         case SPLASHER: runSplasher(rc); break;
                         default: runPre200Tower(rc); break;
                 }} else {
-					rc.setIndicatorString("post200");
                     switch (rc.getType()){
                         case SOLDIER: runSoldier(rc); break; 
                         case MOPPER: runMopper(rc); break;
@@ -136,7 +134,7 @@ public class RobotPlayer {
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(1000);
 		if(robotRuinsArr.length > 0){
 			moveTo(rc, robotRuinsArr[0]);
-			//rc.setIndicatorString("Moving to Ruins");
+			rc.setIndicatorString("Moving to Ruins");
 		} else{
 			flee(rc, nearbyRobots[0].location);
 			rc.setIndicatorString("Fleeing!");
