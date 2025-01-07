@@ -146,6 +146,18 @@ public class RobotPlayer {
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
      */
     public static void runSoldier(RobotController rc) throws GameActionException{
+        MapLocation here = rc.getLocation();
+        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1,rc.getTeam());
+        RobotInfo nearestMopper;
+        int nMopDist = 9999;
+        for (RobotInfo aBot : nearbyAllies) {
+            int botDist = aBot.location.distanceSquaredTo(here);
+            if (botDist < nMopDist && aBot.type == UnitType.MOPPER){
+                nMopDist = botDist;
+                nearestMopper = aBot;
+            }
+        }
+        //if (rc.getPaint())
         // Sense information about all visible nearby tiles.
         MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
         // Search for a nearby ruin to complete.
@@ -158,7 +170,7 @@ public class RobotPlayer {
         if (curRuin != null){
             MapLocation targetLoc = curRuin.getMapLocation();
             moveTo(rc, targetLoc);
-            rc.setIndicatorLine(rc.getLocation(),targetLoc,0,0,0);
+            rc.setIndicatorLine(here,targetLoc,0,0,0);
             // Mark the pattern we need to draw to build a tower here if we haven't already.
             Direction dir = rc.getLocation().directionTo(targetLoc);
             MapLocation shouldBeMarked = curRuin.getMapLocation().subtract(dir);
@@ -194,6 +206,16 @@ public class RobotPlayer {
         if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation())){
             rc.attack(rc.getLocation());
         }
+    }
+
+    public static boolean returnToSource(RobotController rc) {
+        // TODO: Follow increasing density to find paint tower
+        if (followMopper(rc)) {return true;};
+        return false;
+    }
+
+    public static boolean followMopper(RobotController rc) {
+        return false;
     }
 
 
