@@ -134,7 +134,7 @@ public class RobotPlayer {
     }
 
 	public static void spawning(RobotController rc) throws GameActionException {
-		if (rc.getPaint() >= 300 && rc.getMoney() >= 400) {
+		if ((rc.getPaint() >= 300 && rc.getMoney() >= 400) || (rc.getRoundNum() < rc.getPaint())) {
 			for (Direction dir : directions) {
 				MapLocation nextLoc = rc.getLocation().add(dir);
 				if (turnCount % 9 == 0 && rc.canBuildRobot(UnitType.SPLASHER, nextLoc )){
@@ -268,8 +268,8 @@ public class RobotPlayer {
 
     public static boolean refill(RobotController rc, MapLocation loc) throws GameActionException {
         // TODO: Follow increasing density to find tower
-		if (rc.canTransferPaint(loc, 200 - rc.getPaint())) {
-			rc.transferPaint(loc, 200 - rc.getPaint());
+		if (rc.canTransferPaint(loc, rc.getPaint() - 200)) {
+			rc.transferPaint(loc, rc.getPaint() - 200);
 			return true;
 		} 
 		return moveTo(rc, loc);
@@ -1432,11 +1432,13 @@ public class RobotPlayer {
     }
 
 	public static boolean canFill(RobotController rc, MapLocation loc) throws GameActionException {
-		return rc.canAttack(loc) && !rc.senseMapInfo(loc).getPaint().isAlly();
+		MapInfo locInfo = rc.senseMapInfo(loc);
+		return rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly();
 	}
 
 	public static void fill(RobotController rc, MapLocation loc) throws GameActionException {
-		if (rc.canAttack(loc) && !rc.senseMapInfo(loc).getPaint().isAlly()) {
+		MapInfo locInfo = rc.senseMapInfo(loc);
+		if (rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly()) {
 			rc.attack(loc);
 		}
 	}
