@@ -307,7 +307,7 @@ public class RobotPlayer {
     }
 	public static void foundSRP(RobotController rc, MapLocation fuck) throws GameActionException{
 		// Center coordinate is (1,0)
-	MapLocation center = fuck.translate(0, -1);
+		MapLocation center = fuck.translate(0, -1);
 
 		// Check if robot is at center
 		if (rc.getLocation().equals(fuck)) {
