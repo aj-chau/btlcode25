@@ -132,7 +132,9 @@ public class RobotPlayer {
     public static void runPre200Soldier(RobotController rc) throws GameActionException{
         MapLocation[] robotRuinsArr = rc.senseNearbyRuins(1000); //no clue what the robot's vision radius is. 
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(1000);
-		if(robotRuinsArr.length > 0){
+		if (rc.getLocation().equals(robotRuinsArr[0].translate(0,1))){
+			foundSRP(rc, robotRuinsArr[0].translate(0,1));
+		} else if(robotRuinsArr.length > 0){
 			moveTo(rc, robotRuinsArr[0]);
 			rc.setIndicatorString("Moving to Ruins");
 		} else{
@@ -142,6 +144,176 @@ public class RobotPlayer {
 		//Start Painting the Pattern Around the Tower, Build Resource Tower if possible.
 
     }
+	public static void foundSRP(RobotController rc, MapLocation fuck) throws GameActionException{
+		// Center coordinate is (1,0)
+	MapLocation center = fuck.translate(0, -1);
+
+		// Check if robot is at center
+		if (rc.getLocation().equals(fuck)) {
+			// Paint own tile first
+
+			// Far North Row (y+2)
+			MapLocation farNorthWest = center.translate(-2, 2);
+			MapInfo farNorthWestPaint = rc.senseMapInfo(farNorthWest);
+			if (farNorthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
+				rc.attack(farNorthWest, true);
+			}
+
+			MapLocation farNorthNorthWest = center.translate(-1, 2);
+			MapInfo farNorthNorthWestPaint = rc.senseMapInfo(farNorthNorthWest);
+			if (farNorthNorthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(farNorthNorthWest);
+			}
+
+			MapLocation farNorth = center.translate(0, 2);
+			MapInfo farNorthPaint = rc.senseMapInfo(farNorth);
+			if (farNorthPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(farNorth);
+			}
+
+			MapLocation farNorthNorthEast = center.translate(1, 2);
+			MapInfo farNorthNorthEastPaint = rc.senseMapInfo(farNorthNorthEast);
+			if (farNorthNorthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(farNorthNorthEast);
+			}
+
+			MapLocation farNorthEast = center.translate(2, 2);
+			MapInfo farNorthEastPaint = rc.senseMapInfo(farNorthEast);
+			if (farNorthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
+				rc.attack(farNorthEast, true);
+			}
+
+			// North Row (y+1)
+			MapLocation northWest = center.translate(-2, 1);
+			MapInfo northWestPaint = rc.senseMapInfo(northWest);
+			if (northWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(northWest);
+			}
+
+			MapLocation northNorthWest = center.translate(-1, 1);
+			MapInfo northNorthWestPaint = rc.senseMapInfo(northNorthWest);
+			if (northNorthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
+				rc.attack(northNorthWest, true);
+			}
+
+			MapLocation north = center.translate(0, 1);
+			MapInfo northPaint = rc.senseMapInfo(north);
+			if (northPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(north);
+			}
+
+			MapLocation northNorthEast = center.translate(1, 1);
+			MapInfo northNorthEastPaint = rc.senseMapInfo(northNorthEast);
+			if (northNorthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
+				rc.attack(northNorthEast, true);
+			}
+
+			MapLocation northEast = center.translate(2, 1);
+			MapInfo northEastPaint = rc.senseMapInfo(northEast);
+			if (northEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(northEast);
+			}
+
+			// Center Row (y+0)
+			MapLocation centerWest = center.translate(-2, 0);
+			MapInfo centerWestPaint = rc.senseMapInfo(centerWest);
+			if (centerWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(centerWest);
+			}
+
+			MapLocation centerNorthWest = center.translate(-1, 0);
+			MapInfo centerNorthWestPaint = rc.senseMapInfo(centerNorthWest);
+			if (centerNorthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(centerNorthWest);
+			}
+
+			// Center position handled above
+
+			MapLocation centerNorthEast = center.translate(1, 0);
+			MapInfo centerNorthEastPaint = rc.senseMapInfo(centerNorthEast);
+			if (centerNorthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(centerNorthEast);
+			}
+
+			MapLocation centerEast = center.translate(2, 0);
+			MapInfo centerEastPaint = rc.senseMapInfo(centerEast);
+			if (centerEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(centerEast);
+			}
+
+			// South Row (y-1)
+			MapLocation southWest = center.translate(-2, -1);
+			MapInfo southWestPaint = rc.senseMapInfo(southWest);
+			if (southWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(southWest);
+			}
+
+			MapLocation southSouthWest = center.translate(-1, -1);
+			MapInfo southSouthWestPaint = rc.senseMapInfo(southSouthWest);
+			if (southSouthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
+				rc.attack(southSouthWest, true);
+			}
+
+			MapLocation south = center.translate(0, -1);
+			MapInfo southPaint = rc.senseMapInfo(south);
+			if (southPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(south);
+			}
+
+			MapLocation southSouthEast = center.translate(1, -1);
+			MapInfo southSouthEastPaint = rc.senseMapInfo(southSouthEast);
+			if (southSouthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
+				rc.attack(southSouthEast,true);
+			}
+
+			MapLocation southEast = center.translate(2, -1);
+			MapInfo southEastPaint = rc.senseMapInfo(southEast);
+			if (southEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(southEast);
+			}
+
+			// Far South Row (y-2)
+			MapLocation farSouthWest = center.translate(-2, -2);
+			MapInfo farSouthWestPaint = rc.senseMapInfo(farSouthWest);
+			if (farSouthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
+				rc.attack(farSouthWest, true);
+			}
+
+			MapLocation farSouthSouthWest = center.translate(-1, -2);
+			MapInfo farSouthSouthWestPaint = rc.senseMapInfo(farSouthSouthWest);
+			if (farSouthSouthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(farSouthSouthWest);
+			}
+
+			MapLocation farSouth = center.translate(0, -2);
+			MapInfo farSouthPaint = rc.senseMapInfo(farSouth);
+			if (farSouthPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(farSouth);
+			}
+
+			MapLocation farSouthSouthEast = center.translate(1, -2);
+			MapInfo farSouthSouthEastPaint = rc.senseMapInfo(farSouthSouthEast);
+			if (farSouthSouthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
+				rc.attack(farSouthSouthEast);
+			}
+
+			MapLocation farSouthEast = center.translate(2, -2);
+			MapInfo farSouthEastPaint = rc.senseMapInfo(farSouthEast);
+			if (farSouthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
+				rc.attack(farSouthEast, true);
+			}
+		}
+
+		int roundNum = rc.getRoundNum();
+		if (roundNum > 200 && rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER , center)){
+			rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
+		} else if(roundNum < 200 && rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER , center)){
+			rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
+		}else if (rc.canCompleteResourcePattern(center)){
+			rc.completeResourcePattern(center);
+		}
+
+ 	}
     /**
      * Run a single turn for towers.
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
@@ -305,171 +477,6 @@ public class RobotPlayer {
             }
         }
     }
-	public static void foundSRP(RobotController rc, MapLocation fuck) throws GameActionException{
-		// Center coordinate is (1,0)
-		MapLocation center = fuck.translate(0, -1);
-
-		// Check if robot is at center
-		if (rc.getLocation().equals(fuck)) {
-			// Paint own tile first
-
-			// Far North Row (y+2)
-			MapLocation farNorthWest = center.translate(-2, 2);
-			MapInfo farNorthWestPaint = rc.senseMapInfo(farNorthWest);
-			if (farNorthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(farNorthWest, true);
-			}
-
-			MapLocation farNorthNorthWest = center.translate(-1, 2);
-			MapInfo farNorthNorthWestPaint = rc.senseMapInfo(farNorthNorthWest);
-			if (farNorthNorthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farNorthNorthWest);
-			}
-
-			MapLocation farNorth = center.translate(0, 2);
-			MapInfo farNorthPaint = rc.senseMapInfo(farNorth);
-			if (farNorthPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farNorth);
-			}
-
-			MapLocation farNorthNorthEast = center.translate(1, 2);
-			MapInfo farNorthNorthEastPaint = rc.senseMapInfo(farNorthNorthEast);
-			if (farNorthNorthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farNorthNorthEast);
-			}
-
-			MapLocation farNorthEast = center.translate(2, 2);
-			MapInfo farNorthEastPaint = rc.senseMapInfo(farNorthEast);
-			if (farNorthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(farNorthEast, true);
-			}
-
-			// North Row (y+1)
-			MapLocation northWest = center.translate(-2, 1);
-			MapInfo northWestPaint = rc.senseMapInfo(northWest);
-			if (northWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(northWest, true);
-			}
-
-			MapLocation northNorthWest = center.translate(-1, 1);
-			MapInfo northNorthWestPaint = rc.senseMapInfo(northNorthWest);
-			if (northNorthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(northNorthWest);
-			}
-
-			MapLocation north = center.translate(0, 1);
-			MapInfo northPaint = rc.senseMapInfo(north);
-			if (northPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(north, true);
-			}
-
-			MapLocation northNorthEast = center.translate(1, 1);
-			MapInfo northNorthEastPaint = rc.senseMapInfo(northNorthEast);
-			if (northNorthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(northNorthEast);
-			}
-
-			MapLocation northEast = center.translate(2, 1);
-			MapInfo northEastPaint = rc.senseMapInfo(northEast);
-			if (northEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(northEast, true);
-			}
-
-			// Center Row (y+0)
-			MapLocation centerWest = center.translate(-2, 0);
-			MapInfo centerWestPaint = rc.senseMapInfo(centerWest);
-			if (centerWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(centerWest);
-			}
-
-			MapLocation centerNorthWest = center.translate(-1, 0);
-			MapInfo centerNorthWestPaint = rc.senseMapInfo(centerNorthWest);
-			if (centerNorthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(centerNorthWest);
-			}
-
-			// Center position handled above
-
-			MapLocation centerNorthEast = center.translate(1, 0);
-			MapInfo centerNorthEastPaint = rc.senseMapInfo(centerNorthEast);
-			if (centerNorthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(centerNorthEast);
-			}
-
-			MapLocation centerEast = center.translate(2, 0);
-			MapInfo centerEastPaint = rc.senseMapInfo(centerEast);
-			if (centerEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(centerEast);
-			}
-
-			// South Row (y-1)
-			MapLocation southWest = center.translate(-2, -1);
-			MapInfo southWestPaint = rc.senseMapInfo(southWest);
-			if (southWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(southWest, true);
-			}
-
-			MapLocation southSouthWest = center.translate(-1, -1);
-			MapInfo southSouthWestPaint = rc.senseMapInfo(southSouthWest);
-			if (southSouthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(southSouthWest);
-			}
-
-			MapLocation south = center.translate(0, -1);
-			MapInfo southPaint = rc.senseMapInfo(south);
-			if (southPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(south, true);
-			}
-
-			MapLocation southSouthEast = center.translate(1, -1);
-			MapInfo southSouthEastPaint = rc.senseMapInfo(southSouthEast);
-			if (southSouthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(southSouthEast);
-			}
-
-			MapLocation southEast = center.translate(2, -1);
-			MapInfo southEastPaint = rc.senseMapInfo(southEast);
-			if (southEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(southEast, true);
-			}
-
-			// Far South Row (y-2)
-			MapLocation farSouthWest = center.translate(-2, -2);
-			MapInfo farSouthWestPaint = rc.senseMapInfo(farSouthWest);
-			if (farSouthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(farSouthWest, true);
-			}
-
-			MapLocation farSouthSouthWest = center.translate(-1, -2);
-			MapInfo farSouthSouthWestPaint = rc.senseMapInfo(farSouthSouthWest);
-			if (farSouthSouthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farSouthSouthWest);
-			}
-
-			MapLocation farSouth = center.translate(0, -2);
-			MapInfo farSouthPaint = rc.senseMapInfo(farSouth);
-			if (farSouthPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farSouth);
-			}
-
-			MapLocation farSouthSouthEast = center.translate(1, -2);
-			MapInfo farSouthSouthEastPaint = rc.senseMapInfo(farSouthSouthEast);
-			if (farSouthSouthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farSouthSouthEast);
-			}
-
-			MapLocation farSouthEast = center.translate(2, -2);
-			MapInfo farSouthEastPaint = rc.senseMapInfo(farSouthEast);
-			if (farSouthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(farSouthEast, true);
-			}
-			MapInfo ownSq = rc.senseMapInfo(fuck);
-			if (ownSq.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(fuck, true);
-			}
-		}
- 	}
-
 
     public static boolean moveTo(RobotController rc, MapLocation loc) throws GameActionException {
     	return moveUnified(rc, loc, 3);
