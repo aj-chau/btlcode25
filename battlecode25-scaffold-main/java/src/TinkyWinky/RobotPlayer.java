@@ -180,27 +180,55 @@ public class RobotPlayer {
      */
     public static void runSoldier(RobotController rc) throws GameActionException{
         MapLocation here = rc.getLocation();
-        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1,rc.getTeam());
+
+		// Sense and label nearby robots
+		rc.setIndicatorString("Scanning");
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1);
 		RobotInfo nearestTower = null;
         int nTowerDist = 9999;
         RobotInfo nearestMopper = null;
         int nMopDist = 9999;
-        for (RobotInfo aBot : nearbyAllies) {
+		RobotInfo nearestEnemyTower = null;
+		int nETDist = 9999;
+        for (RobotInfo aBot : nearbyRobots) {
             int botDist = aBot.location.distanceSquaredTo(here);
-			if (botDist < nTowerDist && (aBot.type != UnitType.SOLDIER && aBot.type != UnitType.SPLASHER && aBot.type != UnitType.MOPPER)){
+			if (rc.getTeam() == aBot.team && botDist < nTowerDist && (aBot.type != UnitType.SOLDIER && aBot.type != UnitType.SPLASHER && aBot.type != UnitType.MOPPER)){
                 nTowerDist = botDist;
                 nearestTower = aBot;
             }
-			if (botDist < nMopDist && aBot.type == UnitType.MOPPER){
+			if (rc.getTeam() == aBot.team && botDist < nMopDist && aBot.type == UnitType.MOPPER){
                 nMopDist = botDist;
                 nearestMopper = aBot;
             }
+			if (rc.getTeam() != aBot.team && botDist < nETDist && (aBot.type != UnitType.SOLDIER && aBot.type != UnitType.SPLASHER && aBot.type != UnitType.MOPPER)){
+                nETDist = botDist;
+                nearestEnemyTower = aBot;
+            }
         }
+
+		// If not enough paint to safely attack/paint, go refill
 		if (rc.getPaint() < 105 && nearestTower != null) {
+			rc.setIndicatorString("Getting paint");
             refill(rc,nearestTower.location);
         } else if (rc.getPaint() < 105 && nearestMopper != null) {
+			rc.setIndicatorString("Following mopper");
             moveTo(rc,nearestMopper.location);
         }
+
+		// If see enemy tower, attack
+		// TODO: Shoot and scoot, scoot and shoot
+		if (nearestEnemyTower != null) {
+			rc.setIndicatorString("Attack!");
+			if (nETDist <= 20) {
+				rc.attack(nearestEnemyTower.location);
+			} else {
+				moveTo(rc, nearestEnemyTower.location);
+			}
+		}
+
+
+
+
         // Sense information about all visible nearby tiles.
         MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
         // Search for a nearby ruin to complete.
