@@ -76,12 +76,20 @@ public class RobotPlayer {
                 // different types. Here, we separate the control depending on the UnitType, so we can
                 // use different strategies on different robots. If you wish, you are free to rewrite
                 // this into a different control structure!
-                switch (rc.getType()){
-                    case SOLDIER: runSoldier(rc); break; 
-                    case MOPPER: runMopper(rc); break;
-                    case SPLASHER: break; // Consider upgrading examplefuncsplayer to use splashers!
-                    default: runTower(rc); break;
-                    }
+                if (turnCount < 200){
+                    switch (rc.getType()){
+                        case SOLDIER: runPre200Soldier(rc); break; 
+                        case MOPPER: runMopper(rc); break;
+                        case SPLASHER: runSplasher(rc); break;
+                        default: runPre200Tower(rc);
+                }} else {
+                    switch (rc.getType()){
+                        case SOLDIER: runSoldier(rc); break; 
+                        case MOPPER: runMopper(rc); break;
+                        case SPLASHER: runSplasher(rc); break;
+                        default: runTower(rc); break;
+                        }
+                }
                 }
              catch (GameActionException e) {
                 // Oh no! It looks like we did something illegal in the Battlecode world. You should
@@ -107,6 +115,24 @@ public class RobotPlayer {
         // Your code should never reach here (unless it's intentional)! Self-destruction imminent...
     }
 
+    /* Before Round 200, Tower Code. Will Spawn Based off Multiples of Rounds.  */
+    public static void runPre200Tower(RobotController rc) throws GameActionException{
+        Direction dir = directions[rng.nextInt(directions.length)];
+        MapLocation nextLoc = rc.getLocation().add(dir);
+        if (turnCount % 10 == 0 && rc.canBuildRobot(UnitType.MOPPER, nextLoc )){
+            rc.buildRobot(UnitType.MOPPER, nextLoc);
+        } else if (turnCount % 4 == 0 && rc.canBuildRobot(UnitType.SPLASHER, nextLoc)){
+            rc.buildRobot(UnitType.SPLASHER, nextLoc);
+        }else{
+            if(rc.canBuildRobot(UnitType.SOLDIER, nextLoc)){
+                rc.buildRobot(UnitType.SOLDIER, nextLoc);
+            }
+        }
+    }
+    public static void runPre200Soldier(RobotController rc) throws GameActionException{
+        MapInfo[] robotInfoArr = rc.senseNearbyMapInfos();
+        System.out.println(robotInfoArr.toString());
+    }
     /**
      * Run a single turn for towers.
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
@@ -136,8 +162,6 @@ public class RobotPlayer {
         for (Message m : messages) {
             System.out.println("Tower received message: '#" + m.getSenderID() + " " + m.getBytes());
         }
-
-        // TODO: can we attack other bots?
     }
 
 
@@ -239,6 +263,13 @@ public class RobotPlayer {
         }
         // We can also move our code into different methods or classes to better organize it!
         updateEnemyRobots(rc);
+    }
+
+    public static void runSplasher(RobotController rc) throws GameActionException{
+        Direction dir = directions[rng.nextInt(directions.length)];
+        if (rc.canMove(dir)){
+            rc.move(dir);
+        }
     }
 
     public static void updateEnemyRobots(RobotController rc) throws GameActionException{
