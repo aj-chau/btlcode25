@@ -84,6 +84,7 @@ public class RobotPlayer {
                         case SPLASHER: runSplasher(rc); break;
                         default: runPre200Tower(rc); break;
                 }} else {
+					rc.setIndicatorString("post200");
                     switch (rc.getType()){
                         case SOLDIER: runSoldier(rc); break; 
                         case MOPPER: runMopper(rc); break;
