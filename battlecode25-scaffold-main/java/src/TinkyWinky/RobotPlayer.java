@@ -2,8 +2,6 @@ package TinkyWinky;
 
 import java.util.Random;
 
-import org.hibernate.sql.SelectFragment;
-
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -162,6 +160,7 @@ public class RobotPlayer {
             moveTo(rc, targetLoc);
             rc.setIndicatorLine(rc.getLocation(),targetLoc,0,0,0);
             // Mark the pattern we need to draw to build a tower here if we haven't already.
+            Direction dir = rc.getLocation().directionTo(targetLoc);
             MapLocation shouldBeMarked = curRuin.getMapLocation().subtract(dir);
             if (rc.senseMapInfo(shouldBeMarked).getMark() == PaintType.EMPTY && rc.canMarkTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc)){
                 rc.markTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, targetLoc);
