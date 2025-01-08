@@ -108,11 +108,11 @@ public class RobotPlayer {
     }
 
 	public static void spawning(RobotController rc, int mopperCount) throws GameActionException {
-		if ((rc.getPaint() >= 300 && rc.getMoney() >= 500) || (rc.getRoundNum() < rc.getPaint())) {
+		if ((rc.getPaint() >= 300 && rc.getMoney() >= 500) || (rc.getRoundNum()*2 < rc.getPaint())) {
 			for (Direction dir : shuffleArray(directions,rng)) {
 				MapLocation nextLoc = rc.getLocation().add(dir);
 				// If there are less than x moppers near the tower, spawn more moppers
-				if ((rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_THREE_PAINT_TOWER)) && mopperCount < 1) {
+				if ((rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_THREE_PAINT_TOWER)) && mopperCount < 1 && rc.getRoundNum() > 200) {
 					rc.buildRobot(UnitType.MOPPER, nextLoc);
 				}
 				if (turnCount % 3 == 0 && rc.canBuildRobot(UnitType.SPLASHER, nextLoc )){
@@ -234,21 +234,24 @@ public class RobotPlayer {
      */
     public static void runTower(RobotController rc) throws GameActionException{
         // If a tower can be upgraded, upgrade it
-		if (rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER)) {
-			if (rc.canUpgradeTower(rc.getLocation())) {
-				rc.upgradeTower(rc.getLocation());
+		if (rc.getMoney() < rc.getRoundNum() * 2) {
+			if (rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER)) {
+				if (rc.canUpgradeTower(rc.getLocation())) {
+					rc.upgradeTower(rc.getLocation());
+				}
+			}
+			if (rc.getType().equals(UnitType.LEVEL_ONE_MONEY_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_MONEY_TOWER)) {
+				if (rc.canUpgradeTower(rc.getLocation())) {
+					rc.upgradeTower(rc.getLocation());
+				}
+			}
+			if (rc.getType().equals(UnitType.LEVEL_ONE_DEFENSE_TOWER)) {
+				if (rc.canUpgradeTower(rc.getLocation())) {
+					rc.upgradeTower(rc.getLocation());
+				}
 			}
 		}
-		if (rc.getType().equals(UnitType.LEVEL_ONE_MONEY_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_MONEY_TOWER)) {
-			if (rc.canUpgradeTower(rc.getLocation())) {
-				rc.upgradeTower(rc.getLocation());
-			}
-		}
-		if (rc.getType().equals(UnitType.LEVEL_ONE_DEFENSE_TOWER)) {
-			if (rc.canUpgradeTower(rc.getLocation())) {
-				rc.upgradeTower(rc.getLocation());
-			}
-		}
+		
 		// Track number of moppers near the tower
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1);
 		int mopperCount = 0;
@@ -403,8 +406,12 @@ public class RobotPlayer {
 			if (anInfo.getMark() == PaintType.ALLY_SECONDARY) {
 				boolean srp = true;
 				for (Direction aDir : directions) {
-					if (rc.senseMapInfo(anInfo.getMapLocation().add(aDir)).hasRuin()) {
-						srp = false;
+					try {
+						if (rc.senseMapInfo(anInfo.getMapLocation().add(aDir)).hasRuin()) {
+							srp = false;
+						}
+					} catch (GameActionException e) {
+						moveTo(rc, anInfo.getMapLocation());
 					}
 				}
 				if (srp) {
