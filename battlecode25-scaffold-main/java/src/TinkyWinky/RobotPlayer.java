@@ -77,10 +77,10 @@ public class RobotPlayer {
                 // use different strategies on different robots. If you wish, you are free to rewrite
                 // this into a different control structure!
 				switch (rc.getType()){
-					case SOLDIER: runSoldier(rc); break; 
-					case MOPPER: runMopper(rc); break;
-					case SPLASHER: runSplasher(rc); break;
-					default: runTower(rc); break;
+					case SOLDIER -> runSoldier(rc);
+					case MOPPER -> runMopper(rc);
+					case SPLASHER -> runSplasher(rc);
+					default -> runTower(rc);
 					}
                 }
              catch (GameActionException e) {
@@ -109,7 +109,7 @@ public class RobotPlayer {
 
 	public static void spawning(RobotController rc) throws GameActionException {
 		if ((rc.getPaint() >= 300 && rc.getMoney() >= 400) || (rc.getRoundNum() < rc.getPaint())) {
-			for (Direction dir : directions) {
+			for (Direction dir : shuffleArray(directions,rng)) {
 				MapLocation nextLoc = rc.getLocation().add(dir);
 				if (turnCount % 9 == 0 && rc.canBuildRobot(UnitType.SPLASHER, nextLoc )){
 					rc.buildRobot(UnitType.MOPPER, nextLoc);
@@ -123,6 +123,17 @@ public class RobotPlayer {
 			}
 		}
 	}
+
+	static Direction[] shuffleArray(Direction[] dirs, Random rnd) {
+		for (int i = dirs.length - 1; i > 0; i--) {
+		  int index = rnd.nextInt(i + 1);
+		  // Simple swap
+		  Direction a = dirs[index];
+		  dirs[index] = dirs[i];
+		  dirs[i] = a;
+		}
+		return dirs;
+	  }
 
 	public static void paintPattern(RobotController rc, MapLocation center, int patternType) throws GameActionException{
 		rc.setIndicatorString("what the fuck");
@@ -162,43 +173,50 @@ public class RobotPlayer {
             {0, 0, 0, 0, 0}
     	};
 
-		if (patternType == 1){
-			basePattern = moneyTowerPattern;
-		} else if (patternType == 2){
-			basePattern = paintTowerPattern;
-		} else if (patternType == 3){
-			basePattern = defenseTowerPattern;
-		} else if (patternType == 4){
-			basePattern = SRPPattern;
-		}
+        switch (patternType) {
+            case 1 -> basePattern = moneyTowerPattern;
+            case 2 -> basePattern = paintTowerPattern;
+            case 3 -> basePattern = defenseTowerPattern;
+            case 4 -> basePattern = SRPPattern;
+            default -> {
+            }
+        }
 		
-			MapLocation topLeft = center.translate(-2, 2);
-    
-			// Iterate through the pattern
-			for (int dy = 0; dy < 5; dy++) {
-				for (int dx = 0; dx < 5; dx++) {
-					// Skip if no paint needed (0 in pattern)
-					if (basePattern[dy][dx] == 0) continue;
-					
-					// Calculate target location
-					MapLocation target = topLeft.translate(dx, -dy);
-					
-					// Check if we can sense this location
-					if (!rc.canSenseLocation(target)) continue;
-					
-					// Get current paint at location
-					MapInfo info = rc.senseMapInfo(target);
-					PaintType currentPaint = info.getPaint();
-					PaintType desiredPaint = (basePattern[dy][dx] == 2) ? 
-						PaintType.ALLY_SECONDARY : PaintType.ALLY_PRIMARY;
-					
-					// If paint doesn't match and we can attack this location
-					if (currentPaint != desiredPaint && rc.canAttack(target)) {
-						// Use secondary paint if pattern value is 2, otherwise primary
-						rc.attack(target, basePattern[dy][dx] == 2);
-					}
+		MapLocation topLeft = center.translate(-2, 2);
+
+		// Iterate through the pattern
+		for (int dy = 0; dy < 5; dy++) {
+			for (int dx = 0; dx < 5; dx++) {
+				// Skip if no paint needed (0 in pattern)
+				if (basePattern[dy][dx] == 0) continue;
+				
+				// Calculate target location
+				MapLocation target = topLeft.translate(dx, -dy);
+				
+				// Check if we can sense this location
+				if (!rc.canSenseLocation(target)) continue;
+				
+				// Get current paint at location
+				MapInfo info = rc.senseMapInfo(target);
+				PaintType currentPaint = info.getPaint();
+				PaintType desiredPaint = (basePattern[dy][dx] == 2) ? 
+					PaintType.ALLY_SECONDARY : PaintType.ALLY_PRIMARY;
+				
+				// If paint doesn't match and we can attack this location
+				if (currentPaint != desiredPaint && rc.canAttack(target)) {
+					// Use secondary paint if pattern value is 2, otherwise primary
+					rc.attack(target, basePattern[dy][dx] == 2);
 				}
 			}
+		}
+		switch (patternType) {
+            case 1 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
+            case 2 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
+            case 3 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
+            case 4 -> rc.completeResourcePattern(center);
+            default -> {
+            }
+        }
     }
     /**
      * Run a single turn for towers.
@@ -231,6 +249,9 @@ public class RobotPlayer {
 		RobotInfo nearestEnemyTower = null;
 		int nETDist = 9999;
 		boolean enemies = false;
+		int countAlllies = 0;
+		MapLocation distantAlly = null;
+		int fAllyDist = -1;
         for (RobotInfo aBot : nearbyRobots) {
             int botDist = aBot.location.distanceSquaredTo(here);
 			if (rc.getTeam() == aBot.team && botDist < nTowerDist && (aBot.type != UnitType.SOLDIER && aBot.type != UnitType.SPLASHER && aBot.type != UnitType.MOPPER)){
@@ -245,7 +266,11 @@ public class RobotPlayer {
                 nETDist = botDist;
                 nearestEnemyTower = aBot;
             }
-			if (rc.getTeam() != aBot.team) {enemies = true;}
+			if (rc.getTeam() != aBot.team) {enemies = true;} else if (botDist < 5) {countAlllies ++;}
+			if (rc.getTeam() == aBot.team && botDist > fAllyDist) {
+				fAllyDist = botDist;
+				distantAlly = aBot.location;
+			}
         }
 
 		
@@ -283,29 +308,35 @@ public class RobotPlayer {
 
 		// Building on ruins
 		if (nearestRuin != null) {
-			boolean northMark = rc.senseMapInfo(nearestRuin.add(Direction.NORTH)).getMark() == PaintType.ALLY_SECONDARY; //Defense
-			boolean southMark = rc.senseMapInfo(nearestRuin.add(Direction.SOUTH)).getMark() == PaintType.ALLY_SECONDARY; //Paint
-			boolean eastMark = rc.senseMapInfo(nearestRuin.add(Direction.EAST)).getMark() == PaintType.ALLY_SECONDARY; //Money
+			boolean northMark = false;
+			boolean southMark = false;
+			boolean eastMark = false;
+			try {
+				northMark = rc.senseMapInfo(nearestRuin.add(Direction.NORTH)).getMark() == PaintType.ALLY_SECONDARY; //Defense
+				southMark = rc.senseMapInfo(nearestRuin.add(Direction.SOUTH)).getMark() == PaintType.ALLY_SECONDARY; //Paint
+				eastMark = rc.senseMapInfo(nearestRuin.add(Direction.EAST)).getMark() == PaintType.ALLY_SECONDARY; //Money
+			} catch (GameActionException e) {}
 			boolean anyMark = northMark || southMark || eastMark;
 			if (!anyMark) {
-				if (enemies) {
-					rc.mark(nearestRuin.add(Direction.NORTH), true);
-					northMark = true;
-					anyMark = true;
-				} else if (rc.getMoney() < 500) {
-					rc.mark(nearestRuin.add(Direction.EAST), true);
-					eastMark = true;
-					anyMark = true;
-				} else {
-					rc.mark(nearestRuin.add(Direction.SOUTH), true);
-					southMark = true;
-					anyMark = true;
-				}
-
+				rc.setIndicatorString("Marking");
+				try {
+					if (enemies) {
+						rc.mark(nearestRuin.add(Direction.NORTH), true);
+						northMark = true;
+						anyMark = true;
+					} else if (rc.getMoney() < 500) {
+						rc.mark(nearestRuin.add(Direction.EAST), true);
+						eastMark = true;
+						anyMark = true;
+					} else {
+						rc.mark(nearestRuin.add(Direction.SOUTH), true);
+						southMark = true;
+						anyMark = true;
+					}
+				} catch (GameActionException e) {}
 			}
-			
 
-
+			if (anyMark) {rc.setIndicatorString("Building");}
 			if (northMark) {
 				paintPattern(rc, nearestRuin, 3);
 			}
@@ -324,11 +355,26 @@ public class RobotPlayer {
 
 		for (MapInfo anInfo : nearbyTiles) {
 			if (anInfo.getMark() == PaintType.ALLY_SECONDARY) {
+				rc.setIndicatorString("Building");
 				paintPattern(rc, anInfo.getMapLocation(), 4);
 			}
 		}
 
+		for (Direction aDir : directions) {
+			if (!rc.onTheMap(here.add(aDir))) {
+				rc.setIndicatorString("Stay away from the walls");
+				flee(rc, here.add(aDir));
+			}
+		}
 
+		// if (countAlllies > (rc.getRoundNum() / 400) - 1) {
+		// 	if (rc.isMovementReady() && distantAlly != null) {
+		// 		rc.setIndicatorString("Disperse");
+				flee(rc, distantAlly);
+		// 	} else {rc.setIndicatorString("" + Boolean.toString(rc.isMovementReady()) + Boolean.toString(distantAlly != null));}
+		// } else {
+		// 	rc.setIndicatorString("Wait for Reinforcments " + ((rc.getRoundNum() / 400) - 1));
+		// }
 
         
         // Try to paint beneath us as we walk to avoid paint penalties.
