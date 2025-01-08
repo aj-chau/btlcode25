@@ -1,4 +1,4 @@
-package sunBaby;
+package zsunBaby;
 
 import java.util.Random;
 
@@ -9,7 +9,6 @@ import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
 import battlecode.common.PaintType;
 import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
 import battlecode.common.UnitType;
 
 
