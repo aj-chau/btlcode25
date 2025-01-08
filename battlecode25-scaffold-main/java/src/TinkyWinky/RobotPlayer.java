@@ -76,20 +76,12 @@ public class RobotPlayer {
                 // different types. Here, we separate the control depending on the UnitType, so we can
                 // use different strategies on different robots. If you wish, you are free to rewrite
                 // this into a different control structure!
-                if (rc.getRoundNum() < 200){
-                    switch (rc.getType()){
-                        case SOLDIER: runPre200Soldier(rc); break; 
-                        case MOPPER: runMopper(rc); break;
-                        case SPLASHER: runSplasher(rc); break;
-                        default: runPre200Tower(rc); break;
-                }} else {
-                    switch (rc.getType()){
-                        case SOLDIER: runPre200Soldier(rc); break; 
-                        case MOPPER: runMopper(rc); break;
-                        case SPLASHER: runSplasher(rc); break;
-                        default: runTower(rc); break;
-                        }
-                }
+				switch (rc.getType()){
+					case SOLDIER: runSoldier(rc); break; 
+					case MOPPER: runMopper(rc); break;
+					case SPLASHER: runSplasher(rc); break;
+					default: runTower(rc); break;
+					}
                 }
              catch (GameActionException e) {
                 // Oh no! It looks like we did something illegal in the Battlecode world. You should
@@ -114,27 +106,6 @@ public class RobotPlayer {
 
         // Your code should never reach here (unless it's intentional)! Self-destruction imminent...
     }
-
-    /* Before Round 200, Tower Code. Will Spawn Based off Multiples of Rounds.  */
-    public static void runPre200Tower(RobotController rc) throws GameActionException{
-		spawning(rc);
-    }
-    public static void runPre200Soldier(RobotController rc) throws GameActionException{
-        MapLocation[] robotRuinsArr = rc.senseNearbyRuins(1000); //no clue what the robot's vision radius is. 
-		//RobotInfo[] nearbyRobots = rc.senseNearbyRobots(1000);
-
-		//rc.markResourcePattern(new MapLocation(6, 10));
-		if (rc.getLocation().equals(robotRuinsArr[0].translate(0, 1))){
-			paintPattern(rc, robotRuinsArr[0], 1);
-			rc.setIndicatorString("ALL GRAY WHY");
-		} else{
-			moveTo(rc, robotRuinsArr[0].translate(0, 1));
-			rc.setIndicatorString("Moving to Ruins");
-		}
-		//Start Painting the Pattern Around the Tower, Build Resource Tower if possible.
-
-    }
-
 
 	public static void spawning(RobotController rc) throws GameActionException {
 		if ((rc.getPaint() >= 300 && rc.getMoney() >= 400) || (rc.getRoundNum() < rc.getPaint())) {
@@ -192,9 +163,9 @@ public class RobotPlayer {
     	};
 
 		if (patternType == 1){
-			basePattern = paintTowerPattern;
-		} else if (patternType == 2){
 			basePattern = moneyTowerPattern;
+		} else if (patternType == 2){
+			basePattern = paintTowerPattern;
 		} else if (patternType == 3){
 			basePattern = defenseTowerPattern;
 		} else if (patternType == 4){
@@ -336,13 +307,13 @@ public class RobotPlayer {
 
 
 			if (northMark) {
-				//paintPattern(rc, nearestRuin, 3);
+				paintPattern(rc, nearestRuin, 3);
 			}
 			if (southMark) {
-				//paintPattern(rc, nearestRuin, 2);
+				paintPattern(rc, nearestRuin, 2);
 			}
 			if (eastMark) {
-				//paintPattern(rc, nearestRuin, 1);
+				paintPattern(rc, nearestRuin, 1);
 			}
 		}
 
@@ -353,11 +324,11 @@ public class RobotPlayer {
 
 		for (MapInfo anInfo : nearbyTiles) {
 			if (anInfo.getMark() == PaintType.ALLY_SECONDARY) {
-				//paintPattern(rc, anInfo.getMapLocation(), 4);
+				paintPattern(rc, anInfo.getMapLocation(), 4);
 			}
 		}
 
-		
+
 
         
         // Try to paint beneath us as we walk to avoid paint penalties.
