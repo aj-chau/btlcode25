@@ -111,10 +111,10 @@ public class RobotPlayer {
 		if ((rc.getPaint() >= 300 && rc.getMoney() >= 400) || (rc.getRoundNum() < rc.getPaint())) {
 			for (Direction dir : shuffleArray(directions,rng)) {
 				MapLocation nextLoc = rc.getLocation().add(dir);
-				if (turnCount % 9 == 0 && rc.canBuildRobot(UnitType.SPLASHER, nextLoc )){
-					rc.buildRobot(UnitType.MOPPER, nextLoc);
-				} else if (turnCount % 4 == 0 && rc.canBuildRobot(UnitType.MOPPER, nextLoc)){
+				if (turnCount % 3 == 0 && rc.canBuildRobot(UnitType.SPLASHER, nextLoc )){
 					rc.buildRobot(UnitType.SPLASHER, nextLoc);
+				} else if (turnCount % 2 == 0 && rc.canBuildRobot(UnitType.MOPPER, nextLoc)){
+					rc.buildRobot(UnitType.MOPPER, nextLoc);
 				}else{
 					if(rc.canBuildRobot(UnitType.SOLDIER, nextLoc)){
 						rc.buildRobot(UnitType.SOLDIER, nextLoc);
@@ -136,7 +136,8 @@ public class RobotPlayer {
 	  }
 
 	public static void paintPattern(RobotController rc, MapLocation center, int patternType) throws GameActionException{
-		rc.setIndicatorString("what the fuck");
+		rc.setIndicatorString(Integer.toString(patternType));
+		rc.setIndicatorDot(center, 0, 0, 0);
 		 int[][] paintTowerPattern = {
             {2, 1, 1, 1, 2},
             {1, 2, 1, 2, 1},
@@ -194,7 +195,10 @@ public class RobotPlayer {
 				MapLocation target = topLeft.translate(dx, -dy);
 				
 				// Check if we can sense this location
-				if (!rc.canSenseLocation(target)) continue;
+				if (!rc.canSenseLocation(target)) {
+					moveTo(rc,target);
+					continue;
+				}
 				
 				// Get current paint at location
 				MapInfo info = rc.senseMapInfo(target);
@@ -203,12 +207,14 @@ public class RobotPlayer {
 					PaintType.ALLY_SECONDARY : PaintType.ALLY_PRIMARY;
 				
 				// If paint doesn't match and we can attack this location
-				if (currentPaint != desiredPaint && rc.canAttack(target)) {
+				if (currentPaint != desiredPaint && rc.canAttack(target) && currentPaint != PaintType.ENEMY_PRIMARY && currentPaint != PaintType.ENEMY_SECONDARY) {
 					// Use secondary paint if pattern value is 2, otherwise primary
 					rc.attack(target, basePattern[dy][dx] == 2);
+					rc.setIndicatorDot(target, 1, 1, 1);
 				}
 			}
 		}
+		moveTo(rc, center);
 		switch (patternType) {
             case 1 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
             case 2 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
@@ -321,17 +327,23 @@ public class RobotPlayer {
 				rc.setIndicatorString("Marking");
 				try {
 					if (enemies) {
-						rc.mark(nearestRuin.add(Direction.NORTH), true);
-						northMark = true;
-						anyMark = true;
-					} else if (rc.getMoney() < 500) {
-						rc.mark(nearestRuin.add(Direction.EAST), true);
-						eastMark = true;
-						anyMark = true;
+						if (here.distanceSquaredTo(nearestRuin.add(Direction.NORTH)) <= 2) {
+							rc.mark(nearestRuin.add(Direction.NORTH), true);
+							northMark = true;
+							anyMark = true;
+						} else {moveTo(rc, nearestRuin.add(Direction.NORTH));}
+					} else if (rc.getMoney() < rc.getRoundNum()/4) {
+						if (here.distanceSquaredTo(nearestRuin.add(Direction.EAST)) <= 2) {
+							rc.mark(nearestRuin.add(Direction.EAST), true);
+							eastMark = true;
+							anyMark = true;
+						} else {moveTo(rc, nearestRuin.add(Direction.EAST));}
 					} else {
-						rc.mark(nearestRuin.add(Direction.SOUTH), true);
-						southMark = true;
-						anyMark = true;
+						if (here.distanceSquaredTo(nearestRuin.add(Direction.SOUTH)) <= 2) {
+							rc.mark(nearestRuin.add(Direction.SOUTH), true);
+							southMark = true;
+							anyMark = true;
+						} else {moveTo(rc, nearestRuin.add(Direction.SOUTH));}
 					}
 				} catch (GameActionException e) {}
 			}
@@ -355,8 +367,16 @@ public class RobotPlayer {
 
 		for (MapInfo anInfo : nearbyTiles) {
 			if (anInfo.getMark() == PaintType.ALLY_SECONDARY) {
-				rc.setIndicatorString("Building");
-				paintPattern(rc, anInfo.getMapLocation(), 4);
+				boolean srp = true;
+				for (Direction aDir : directions) {
+					if (rc.senseMapInfo(anInfo.getMapLocation().add(aDir)).hasRuin()) {
+						srp = false;
+					}
+				}
+				if (srp) {
+					rc.setIndicatorString("Building");
+					paintPattern(rc, anInfo.getMapLocation(), 4);
+				}
 			}
 		}
 
