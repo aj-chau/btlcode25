@@ -549,14 +549,24 @@ public class RobotPlayer {
             moveTo(rc,nearestMopper.location);
         }
         
-        // if see an enemy, attack it
-        for (RobotInfo aBot : nearbyRobots) {
-            if (rc.getTeam() != aBot.team) {
-                if (rc.canAttack(aBot.location)) {
-                    rc.attack(aBot.location);
-                }
+        // if see an enemy tower, attack it
+        if (nearestEnemyTower != null) {
+            rc.setIndicatorString("Attack!");
+            if (nETDist <= 3) {
+                rc.attack(nearestEnemyTower.location);
+            } else {
+                moveTo(rc, nearestEnemyTower.location);
             }
         }
+
+        // attachs enemy -- which splashers shouldnt do
+        // for (RobotInfo aBot : nearbyRobots) {
+        //     if (rc.getTeam() != aBot.team) {
+        //         if (rc.canAttack(aBot.location)) {
+        //             rc.attack(aBot.location);
+        //         }
+        //     }
+        // }
 
 		for (Direction aDir : directions) {
 			if (!rc.onTheMap(here.add(aDir))) {
