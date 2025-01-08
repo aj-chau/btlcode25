@@ -503,9 +503,87 @@ public class RobotPlayer {
 	}
 
     public static void runSplasher(RobotController rc) throws GameActionException{
-        Direction dir = directions[rng.nextInt(directions.length)];
-        MapLocation nextLoc = rc.getLocation().add(dir);
-        moveTo(rc,nextLoc);
+
+        MapLocation here = rc.getLocation();
+
+		// Sense and label nearby robots - copied from runSoldier in case we want to use it
+		rc.setIndicatorString("Scanning");
+        RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1);
+		RobotInfo nearestTower = null;
+        int nTowerDist = 9999;
+        RobotInfo nearestMopper = null;
+        int nMopDist = 9999;
+		RobotInfo nearestEnemyTower = null;
+		int nETDist = 9999;
+		boolean enemies = false;
+		int countAlllies = 0;
+		MapLocation distantAlly = null;
+		int fAllyDist = -1;
+        for (RobotInfo aBot : nearbyRobots) {
+            int botDist = aBot.location.distanceSquaredTo(here);
+			if (rc.getTeam() == aBot.team && botDist < nTowerDist && (aBot.type != UnitType.SOLDIER && aBot.type != UnitType.SPLASHER && aBot.type != UnitType.MOPPER)){
+                nTowerDist = botDist;
+                nearestTower = aBot;
+            }
+			if (rc.getTeam() == aBot.team && botDist < nMopDist && aBot.type == UnitType.MOPPER){
+                nMopDist = botDist;
+                nearestMopper = aBot;
+            }
+			if (rc.getTeam() != aBot.team && botDist < nETDist && (aBot.type != UnitType.SOLDIER && aBot.type != UnitType.SPLASHER && aBot.type != UnitType.MOPPER)){
+                nETDist = botDist;
+                nearestEnemyTower = aBot;
+            }
+			if (rc.getTeam() != aBot.team) {enemies = true;} else if (botDist < 5) {countAlllies ++;}
+			if (rc.getTeam() == aBot.team && botDist > fAllyDist) {
+				fAllyDist = botDist;
+				distantAlly = aBot.location;
+			}
+        }
+		
+		// If not enough paint to safely attack/paint, go refill
+		if (rc.getPaint() < 150 && nearestTower != null) {
+			rc.setIndicatorString("Getting paint");
+            refill(rc,nearestTower.location);
+        } else if (rc.getPaint() < 150 && nearestMopper != null) {
+			rc.setIndicatorString("Following mopper");
+            moveTo(rc,nearestMopper.location);
+        }
+        
+        // if see an enemy, attack it
+        for (RobotInfo aBot : nearbyRobots) {
+            if (rc.getTeam() != aBot.team) {
+                if (rc.canAttack(aBot.location)) {
+                    rc.attack(aBot.location);
+                }
+            }
+        }
+
+		for (Direction aDir : directions) {
+			if (!rc.onTheMap(here.add(aDir))) {
+				rc.setIndicatorString("Stay away from the walls");
+				flee(rc, here.add(aDir));
+			}
+		}
+
+
+        // Avoiding wasting paint by not re-painting our own tiles.
+		// don't paint over own tiles, especially if secondary marker is nearby
+        boolean nearbySecondary = false;
+        MapInfo[] nearbyTiles = rc.senseNearbyMapInfos();
+		MapInfo currentTile = rc.senseMapInfo(rc.getLocation());
+        for (MapInfo anInfo : nearbyTiles) {
+            if (anInfo.getPaint().isAlly() && rc.canAttack(anInfo.getMapLocation())) {
+                nearbySecondary = true;
+            }
+        }
+        // if not ally paint or is empty tile, attack
+		if (!currentTile.getPaint().isAlly() && rc.canAttack(rc.getLocation()) && !nearbySecondary){
+			rc.attack(rc.getLocation());
+		}
+        // if is ally paint or nearby more than 5 allies, flee or move away
+        if (currentTile.getPaint().isAlly() || countAlllies > 5){
+            flee(rc, distantAlly);
+        }
     }
 
     public static void updateEnemyRobots(RobotController rc) throws GameActionException{
