@@ -75,6 +75,7 @@ public class RobotPlayer {
                 // different types. Here, we separate the control depending on the UnitType, so we can
                 // use different strategies on different robots. If you wish, you are free to rewrite
                 // this into a different control structure!
+				rc.setIndicatorString("");
 				switch (rc.getType()){
 					case SOLDIER -> runSoldier(rc);
 					case MOPPER -> runMopper(rc);
@@ -452,20 +453,47 @@ public class RobotPlayer {
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
      */
     public static void runMopper(RobotController rc) throws GameActionException{
-        // Move and attack randomly.
-        Direction dir = directions[rng.nextInt(directions.length)];
-        MapLocation nextLoc = rc.getLocation().add(dir);
-        //moveTo(rc,nextLoc);
-        if (rc.canMopSwing(dir)){
-            rc.mopSwing(dir);
-            System.out.println("Mop Swing! Booyah!");
-        }
-        else if (rc.canAttack(nextLoc)){
-            rc.attack(nextLoc);
-        }
-        // We can also move our code into different methods or classes to better organize it!
-        updateEnemyRobots(rc);
-    }
+			//Sense Enemies to Flee
+			//RobotInfo[] enemyRobots = rc.senseNearbyRobots(1000, rc.getTeam().opponent());
+			RobotInfo[] friendlyRobots = rc.senseNearbyRobots(1000,rc.getTeam());
+			if (rc.getPaint() < 50){
+				rc.setIndicatorString("low health, moving to" + friendlyRobots[0].location);
+				moveTo(rc,friendlyRobots[0].getLocation());
+			} else if (friendlyRobots.length > 0){
+				for(RobotInfo robot:friendlyRobots){
+					if(robot.getType().equals(UnitType.MOPPER) && robot.getPaintAmount() < 50 || robot.getType().equals(UnitType.SPLASHER) && robot.getPaintAmount() < 200 || robot.getType().equals(UnitType.SOLDIER) && robot.getPaintAmount() < 105){
+						int paintAmt = 0;
+						if(robot.getType().equals(UnitType.MOPPER) && rc.canTransferPaint(robot.getLocation(), 10)){
+							paintAmt = 100 - robot.getPaintAmount();
+							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
+							rc.transferPaint(robot.location, paintAmt);
+						}
+						else if(robot.getType().equals(UnitType.SPLASHER)&& rc.canTransferPaint(robot.getLocation(), 10)){
+							paintAmt = 300 - robot.getPaintAmount();
+							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt + robot.getType());
+							rc.transferPaint(robot.location, paintAmt);
+						}
+						else if(robot.getType().equals(UnitType.SOLDIER)&& rc.canTransferPaint(robot.getLocation(), 10)){
+							paintAmt = 200 - robot.getPaintAmount();
+							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
+							rc.transferPaint(robot.location, paintAmt);
+						} else {
+							moveTo(rc,robot.getLocation());
+						}
+					}
+				}
+			} else {
+				for (RobotInfo robot:friendlyRobots){
+				if(robot.getType().equals(UnitType.MOPPER) && robot.paintAmount >= 50){
+					rc.setIndicatorString("running from other moppers");
+					flee(rc, robot.location);
+					
+				} else {
+					rc.setIndicatorString("confused");
+				}
+			}
+		}
+	}
 
     public static void runSplasher(RobotController rc) throws GameActionException{
         Direction dir = directions[rng.nextInt(directions.length)];
