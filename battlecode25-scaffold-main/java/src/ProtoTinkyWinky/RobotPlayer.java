@@ -197,11 +197,11 @@ public class RobotPlayer {
 				
 				// Calculate target location
 				MapLocation target = topLeft.translate(dx, -dy);
-				
-				// Check if we can sense this location
+
 				if (!rc.canSenseLocation(target)) {
-					moveTo(rc,target);
-					continue;
+					if(!moveTo(rc,target)) {
+						continue;
+					}
 				}
 				
 				// Get current paint at location
@@ -210,23 +210,53 @@ public class RobotPlayer {
 				PaintType desiredPaint = (basePattern[dy][dx] == 2) ? 
 					PaintType.ALLY_SECONDARY : PaintType.ALLY_PRIMARY;
 				
-				// If paint doesn't match and we can attack this location
-				if (currentPaint != desiredPaint && rc.canAttack(target) && currentPaint != PaintType.ENEMY_PRIMARY && currentPaint != PaintType.ENEMY_SECONDARY) {
-					// Use secondary paint if pattern value is 2, otherwise primary
-					rc.attack(target, basePattern[dy][dx] == 2);
-					rc.setIndicatorDot(target, 1, 1, 1);
+				if (rc.getType() == UnitType.SOLDIER) {
+					// If paint doesn't match and we can attack this location
+					if (currentPaint != desiredPaint && currentPaint != PaintType.ENEMY_PRIMARY && currentPaint != PaintType.ENEMY_SECONDARY) {
+						// Check if we can paint this location
+						if (!rc.canAttack(target)) {
+							if(!moveTo(rc,target)){continue;}
+						}
+				
+						// Use secondary paint if pattern value is 2, otherwise primary
+						rc.attack(target, basePattern[dy][dx] == 2);
+						rc.setIndicatorDot(target, 1, 1, 1);
+					}
+				} else  {
+					// If paint doesn't match and we can attack this location
+					if (currentPaint != desiredPaint && rc.canAttack(target) && !currentPaint.isAlly() && currentPaint != PaintType.EMPTY) {
+						// Check if we can paint this location
+						if (!rc.canAttack(target)) {
+							if(!moveTo(rc,target)){continue;}
+						}
+						// Use secondary paint if pattern value is 2, otherwise primary
+						rc.attack(target, basePattern[dy][dx] == 2);
+						rc.setIndicatorDot(target, 1, 1, 1);
+					}
 				}
+				
 			}
 		}
 		moveTo(rc, center);
+		Boolean canComplete = false;
 		switch (patternType) {
-            case 1 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
-            case 2 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
-            case 3 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
-            case 4 -> rc.completeResourcePattern(center);
+            case 1 -> canComplete = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
+            case 2 -> canComplete = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
+            case 3 -> canComplete = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
+            case 4 -> canComplete = rc.canCompleteResourcePattern(center);
             default -> {
             }
         }
+		if (canComplete) {
+			switch (patternType) {
+				case 1 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
+				case 2 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
+				case 3 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
+				case 4 -> rc.completeResourcePattern(center);
+				default -> {
+				}
+			}
+		}
     }
     /**
      * Run a single turn for towers.
@@ -339,7 +369,7 @@ public class RobotPlayer {
 		// TODO: Shoot and scoot, scoot and shoot
 		if (nearestEnemyTower != null) {
 			rc.setIndicatorString("Attack!");
-			if (nETDist <= 20) {
+			if (rc.canAttack(nearestEnemyTower.location)) {
 				rc.attack(nearestEnemyTower.location);
 			} else {
 				moveTo(rc, nearestEnemyTower.location);
@@ -403,8 +433,14 @@ public class RobotPlayer {
 			if (anInfo.getMark() == PaintType.ALLY_SECONDARY) {
 				boolean srp = true;
 				for (Direction aDir : directions) {
-					if (rc.senseMapInfo(anInfo.getMapLocation().add(aDir)).hasRuin()) {
+					if (!rc.canSenseLocation(anInfo.getMapLocation().add(aDir))) {
+						if(!moveTo(rc, anInfo.getMapLocation().add(aDir))) {
+							srp = false;
+							break;
+						}
+					} else if (rc.senseMapInfo(anInfo.getMapLocation().add(aDir)).hasRuin()) {
 						srp = false;
+						break;
 					}
 				}
 				if (srp) {
@@ -525,25 +561,33 @@ public class RobotPlayer {
     }
 
     public static boolean moveTo(RobotController rc, MapLocation loc) throws GameActionException {
-    	return moveUnified(rc, loc, 3);
+		if (loc != null) {
+			return moveUnified(rc, loc, 3);
+		} else {return false;}
     }
     
     public static boolean moveTo(RobotController rc, MapLocation loc, int threshold) throws GameActionException {
-    	return moveUnified(rc, loc, threshold);
+    	if (loc != null) {
+			return moveUnified(rc, loc, threshold);
+		} else {return false;}
     }
     
     public static boolean flee(RobotController rc, MapLocation loc) throws GameActionException {
-    	MapLocation here = rc.getLocation();
-    	int dx = loc.x - here.x;
-    	int dy = loc.y - here.y;
-    	return moveUnified(rc, new MapLocation(here.x - 2*dx, here.y - 2*dy), 3);
+		if (loc != null) {
+			MapLocation here = rc.getLocation();
+			int dx = loc.x - here.x;
+			int dy = loc.y - here.y;
+			return moveUnified(rc, new MapLocation(here.x - 2*dx, here.y - 2*dy), 3);
+		} else {return false;}
     }
     
     public static boolean flee(RobotController rc, MapLocation loc, int threshold) throws GameActionException {
-    	MapLocation here = rc.getLocation();
-    	int dx = loc.x - here.x;
-    	int dy = loc.y - here.y;
-    	return moveUnified(rc, new MapLocation(here.x - 2*dx, here.y - 2*dy), threshold);
+		if (loc != null) {
+			MapLocation here = rc.getLocation();
+			int dx = loc.x - here.x;
+			int dy = loc.y - here.y;
+			return moveUnified(rc, new MapLocation(here.x - 2*dx, here.y - 2*dy), threshold);
+		} else {return false;}
     }
     
     public static boolean moveUnified(RobotController rc, MapLocation loc, int threshold) throws GameActionException {
@@ -584,7 +628,7 @@ public class RobotPlayer {
     	}
     	
     	if (useFakeSetPoint >= threshold) {
-    		rc.setIndicatorLine(here, fakeSetPoint, 0, 0, 0);
+    		//rc.setIndicatorLine(here, fakeSetPoint, 0, 0, 0);
         	return mooTwo(rc, fakeSetPoint);
     	}
     	return false;
@@ -1573,57 +1617,57 @@ public class RobotPlayer {
     
     public static boolean scoot(RobotController rc, Direction dir, Direction secDir, boolean restrictive) throws GameActionException {
     	//rc.setIndicatorString("Ultra Greedy " + dir.toString());
-    	if (rc.canMove(dir) || canFill(rc, rc.getLocation().add(dir))) {
+    	if (rc.canMove(dir)) {
     		fill(rc, rc.getLocation().add(dir));
     		rc.move(dir);
     		return true;
-        } else if (rc.canMove(secDir) || canFill(rc, rc.getLocation().add(secDir))) {
+        } else if (rc.canMove(secDir)) {
         	fill(rc, rc.getLocation().add(secDir));
     		rc.move(secDir);
     		return true;
         } else if (dir.rotateLeft() == secDir) {
-        	if (rc.canMove(dir.rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight()))) {
+        	if (rc.canMove(dir.rotateRight())) {
         		fill(rc, rc.getLocation().add(dir.rotateRight()));
         		rc.move(dir.rotateRight());
         		return true;
         	} else if (restrictive) {
         		return false;
-        	} else if (rc.canMove(dir.rotateLeft().rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft()))) {
+        	} else if (rc.canMove(dir.rotateLeft().rotateLeft())) {
         		fill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft()));
         		rc.move(dir.rotateLeft().rotateLeft());
         		return true;
-        	} else if (rc.canMove(dir.rotateRight().rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight().rotateRight()))) {
+        	} else if (rc.canMove(dir.rotateRight().rotateRight())) {
         		fill(rc, rc.getLocation().add(dir.rotateRight().rotateRight()));
         		rc.move(dir.rotateRight().rotateRight());
         		return true;
-        	} else if (rc.canMove(dir.rotateLeft().rotateLeft().rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft().rotateLeft()))) {
+        	} else if (rc.canMove(dir.rotateLeft().rotateLeft().rotateLeft())) {
         		fill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft().rotateLeft()));
         		rc.move(dir.rotateLeft().rotateLeft().rotateLeft());
         		return true;
-        	} else if (rc.canMove(dir.rotateRight().rotateRight().rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight().rotateRight().rotateRight()))) {
+        	} else if (rc.canMove(dir.rotateRight().rotateRight().rotateRight())) {
         		fill(rc, rc.getLocation().add(dir.rotateRight().rotateRight().rotateRight()));
         		rc.move(dir.rotateRight().rotateRight().rotateRight());
         		return true;
         	}
-        } else if (rc.canMove(dir.rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft()))) {
+        } else if (rc.canMove(dir.rotateLeft())) {
         	fill(rc, rc.getLocation().add(dir.rotateLeft()));
     		rc.move(dir.rotateLeft());
     		return true;
     	} else if (restrictive) {
     		return false;
-    	} else if (rc.canMove(dir.rotateRight().rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight().rotateRight()))) {
+    	} else if (rc.canMove(dir.rotateRight().rotateRight())) {
     		fill(rc, rc.getLocation().add(dir.rotateRight().rotateRight()));
     		rc.move(dir.rotateRight().rotateRight());
     		return true;
-    	} else if (rc.canMove(dir.rotateLeft().rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft()))) {
+    	} else if (rc.canMove(dir.rotateLeft().rotateLeft())) {
     		fill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft()));
     		rc.move(dir.rotateLeft().rotateLeft());
     		return true;
-    	} else if (rc.canMove(dir.rotateRight().rotateRight().rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight().rotateRight().rotateRight()))) {
+    	} else if (rc.canMove(dir.rotateRight().rotateRight().rotateRight())) {
     		fill(rc, rc.getLocation().add(dir.rotateRight().rotateRight().rotateRight()));
     		rc.move(dir.rotateRight().rotateRight().rotateRight());
     		return true;
-    	} else if (rc.canMove(dir.rotateLeft().rotateLeft().rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft().rotateLeft()))) {
+    	} else if (rc.canMove(dir.rotateLeft().rotateLeft().rotateLeft())) {
     		fill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft().rotateLeft()));
     		rc.move(dir.rotateLeft().rotateLeft().rotateLeft());
     		return true;
@@ -1632,14 +1676,18 @@ public class RobotPlayer {
     }
 
 	public static boolean canFill(RobotController rc, MapLocation loc) throws GameActionException {
-		MapInfo locInfo = rc.senseMapInfo(loc);
-		return rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly();
+		if (rc.canSenseLocation(loc)) {
+			MapInfo locInfo = rc.senseMapInfo(loc);
+			return rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly();
+		} else {return false;}
 	}
 
 	public static void fill(RobotController rc, MapLocation loc) throws GameActionException {
-		MapInfo locInfo = rc.senseMapInfo(loc);
-		if (rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly()) {
-			rc.attack(loc);
+		if (rc.canSenseLocation(loc)) {
+			MapInfo locInfo = rc.senseMapInfo(loc);
+			if (rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly()) {
+				rc.attack(loc);
+			}
 		}
 	}
 }

@@ -57,7 +57,7 @@ public class RobotPlayer {
     public static void run(RobotController rc) throws GameActionException {
         // Hello world! Standard output is very useful for debugging.
         // Everything you say here will be directly viewable in your terminal when you run a match!
-        System.out.println("I'm alive");
+        //System.out.println("I'm alive");
 
         // You can also use indicators to save debug notes in replays.
         rc.setIndicatorString("Hello world!");
@@ -108,7 +108,7 @@ public class RobotPlayer {
     }
 
 	public static void spawning(RobotController rc, int mopperCount) throws GameActionException {
-		if ((rc.getPaint() >= 300 && rc.getMoney() >= 500) || (rc.getRoundNum()*2 < rc.getPaint())) {
+		if ((rc.getPaint() >= 300 && rc.getMoney() >= 1000) || (rc.getRoundNum()*2 < rc.getPaint())) {
 			for (Direction dir : shuffleArray(directions,rng)) {
 				MapLocation nextLoc = rc.getLocation().add(dir);
 				// If there are less than x moppers near the tower, spawn more moppers
@@ -197,11 +197,9 @@ public class RobotPlayer {
 				
 				// Calculate target location
 				MapLocation target = topLeft.translate(dx, -dy);
-				
-				// Check if we can sense this location
+
 				if (!rc.canSenseLocation(target)) {
-					moveTo(rc,target);
-					continue;
+					if(!moveTo(rc,target)) {continue;}
 				}
 				
 				// Get current paint at location
@@ -210,23 +208,53 @@ public class RobotPlayer {
 				PaintType desiredPaint = (basePattern[dy][dx] == 2) ? 
 					PaintType.ALLY_SECONDARY : PaintType.ALLY_PRIMARY;
 				
-				// If paint doesn't match and we can attack this location
-				if (currentPaint != desiredPaint && rc.canAttack(target) && currentPaint != PaintType.ENEMY_PRIMARY && currentPaint != PaintType.ENEMY_SECONDARY) {
-					// Use secondary paint if pattern value is 2, otherwise primary
-					rc.attack(target, basePattern[dy][dx] == 2);
-					rc.setIndicatorDot(target, 1, 1, 1);
+				if (rc.getType() == UnitType.SOLDIER) {
+					// If paint doesn't match and we can attack this location
+					if (currentPaint != desiredPaint && currentPaint != PaintType.ENEMY_PRIMARY && currentPaint != PaintType.ENEMY_SECONDARY) {
+						// Check if we can paint this location
+						if (!rc.canAttack(target)) {
+							if(!moveTo(rc,target)){continue;}
+						}
+				
+						// Use secondary paint if pattern value is 2, otherwise primary
+						rc.attack(target, basePattern[dy][dx] == 2);
+						rc.setIndicatorDot(target, 1, 1, 1);
+					}
+				} else  {
+					// If paint doesn't match and we can attack this location
+					if (currentPaint != desiredPaint && rc.canAttack(target) && !currentPaint.isAlly() && currentPaint != PaintType.EMPTY) {
+						// Check if we can paint this location
+						if (!rc.canAttack(target)) {
+							if(!moveTo(rc,target)){continue;}
+						}
+						// Use secondary paint if pattern value is 2, otherwise primary
+						rc.attack(target, basePattern[dy][dx] == 2);
+						rc.setIndicatorDot(target, 1, 1, 1);
+					}
 				}
+				
 			}
 		}
 		moveTo(rc, center);
+		Boolean canComplete = false;
 		switch (patternType) {
-            case 1 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
-            case 2 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
-            case 3 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
-            case 4 -> rc.completeResourcePattern(center);
+            case 1 -> canComplete = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
+            case 2 -> canComplete = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
+            case 3 -> canComplete = rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
+            case 4 -> canComplete = rc.canCompleteResourcePattern(center);
             default -> {
             }
         }
+		if (canComplete) {
+			switch (patternType) {
+				case 1 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
+				case 2 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
+				case 3 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
+				case 4 -> rc.completeResourcePattern(center);
+				default -> {
+				}
+			}
+		}
     }
     /**
      * Run a single turn for towers.
@@ -342,60 +370,14 @@ public class RobotPlayer {
 		// TODO: Shoot and scoot, scoot and shoot
 		if (nearestEnemyTower != null) {
 			rc.setIndicatorString("Attack!");
-			if (nETDist <= 20) {
+			if (rc.canAttack(nearestEnemyTower.location)) {
 				rc.attack(nearestEnemyTower.location);
 			} else {
 				moveTo(rc, nearestEnemyTower.location);
 			}
 		}
 
-		// Building on ruins
-		if (nearestRuin != null) {
-			boolean northMark = false;
-			boolean southMark = false;
-			boolean eastMark = false;
-			try {
-				northMark = rc.senseMapInfo(nearestRuin.add(Direction.NORTH)).getMark() == PaintType.ALLY_SECONDARY; //Defense
-				southMark = rc.senseMapInfo(nearestRuin.add(Direction.SOUTH)).getMark() == PaintType.ALLY_SECONDARY; //Paint
-				eastMark = rc.senseMapInfo(nearestRuin.add(Direction.EAST)).getMark() == PaintType.ALLY_SECONDARY; //Money
-			} catch (GameActionException e) {}
-			boolean anyMark = northMark || southMark || eastMark;
-			if (!anyMark) {
-				rc.setIndicatorString("Marking");
-				try {
-					if (enemies) {
-						if (here.distanceSquaredTo(nearestRuin.add(Direction.NORTH)) <= 2) {
-							rc.mark(nearestRuin.add(Direction.NORTH), true);
-							northMark = true;
-							anyMark = true;
-						} else {moveTo(rc, nearestRuin.add(Direction.NORTH));}
-					} else if (rc.getMoney() < rc.getRoundNum()/4) {
-						if (here.distanceSquaredTo(nearestRuin.add(Direction.EAST)) <= 2) {
-							rc.mark(nearestRuin.add(Direction.EAST), true);
-							eastMark = true;
-							anyMark = true;
-						} else {moveTo(rc, nearestRuin.add(Direction.EAST));}
-					} else {
-						if (here.distanceSquaredTo(nearestRuin.add(Direction.SOUTH)) <= 2) {
-							rc.mark(nearestRuin.add(Direction.SOUTH), true);
-							southMark = true;
-							anyMark = true;
-						} else {moveTo(rc, nearestRuin.add(Direction.SOUTH));}
-					}
-				} catch (GameActionException e) {}
-			}
-
-			if (anyMark) {rc.setIndicatorString("Building");}
-			if (northMark) {
-				paintPattern(rc, nearestRuin, 3);
-			}
-			if (southMark) {
-				paintPattern(rc, nearestRuin, 2);
-			}
-			if (eastMark) {
-				paintPattern(rc, nearestRuin, 1);
-			}
-		}
+		buildRuins(rc, nearestRuin, enemies);
 
 
 
@@ -406,12 +388,14 @@ public class RobotPlayer {
 			if (anInfo.getMark() == PaintType.ALLY_SECONDARY) {
 				boolean srp = true;
 				for (Direction aDir : directions) {
-					try {
-						if (rc.senseMapInfo(anInfo.getMapLocation().add(aDir)).hasRuin()) {
+					if (!rc.canSenseLocation(anInfo.getMapLocation().add(aDir))) {
+						if(!moveTo(rc, anInfo.getMapLocation().add(aDir))) {
 							srp = false;
+							break;
 						}
-					} catch (GameActionException e) {
-						moveTo(rc, anInfo.getMapLocation());
+					} else if (rc.senseMapInfo(anInfo.getMapLocation().add(aDir)).hasRuin()) {
+						srp = false;
+						break;
 					}
 				}
 				if (srp) {
@@ -455,42 +439,110 @@ public class RobotPlayer {
 		return moveTo(rc, loc);
     }
 
+	public static void buildRuins(RobotController rc, MapLocation nearestRuin, Boolean enemies) throws GameActionException {
+		MapLocation here = rc.getLocation();
+		// Building on ruins
+		if (nearestRuin != null) {
+			boolean northMark = false;
+			boolean southMark = false;
+			boolean eastMark = false;
+			try {
+				northMark = rc.senseMapInfo(nearestRuin.add(Direction.NORTH)).getMark() == PaintType.ALLY_SECONDARY; //Defense
+				southMark = rc.senseMapInfo(nearestRuin.add(Direction.SOUTH)).getMark() == PaintType.ALLY_SECONDARY; //Paint
+				eastMark = rc.senseMapInfo(nearestRuin.add(Direction.EAST)).getMark() == PaintType.ALLY_SECONDARY; //Money
+			} catch (GameActionException e) {}
+			boolean anyMark = northMark || southMark || eastMark;
+			if (!anyMark) {
+				rc.setIndicatorString("Marking");
+				try {
+					if (enemies) {
+						if (here.distanceSquaredTo(nearestRuin.add(Direction.NORTH)) <= 2) {
+							rc.mark(nearestRuin.add(Direction.NORTH), true);
+							northMark = true;
+							anyMark = true;
+						} else {moveTo(rc, nearestRuin.add(Direction.NORTH));}
+					} else if (rc.getMoney() < rc.getRoundNum()) {
+						if (here.distanceSquaredTo(nearestRuin.add(Direction.EAST)) <= 2) {
+							rc.mark(nearestRuin.add(Direction.EAST), true);
+							eastMark = true;
+							anyMark = true;
+						} else {moveTo(rc, nearestRuin.add(Direction.EAST));}
+					} else {
+						if (here.distanceSquaredTo(nearestRuin.add(Direction.SOUTH)) <= 2) {
+							rc.mark(nearestRuin.add(Direction.SOUTH), true);
+							southMark = true;
+							anyMark = true;
+						} else {moveTo(rc, nearestRuin.add(Direction.SOUTH));}
+					}
+				} catch (GameActionException e) {}
+			}
+
+			if (anyMark) {rc.setIndicatorString("Building");}
+			if (northMark) {
+				paintPattern(rc, nearestRuin, 3);
+			}
+			if (southMark) {
+				paintPattern(rc, nearestRuin, 2);
+			}
+			if (eastMark) {
+				paintPattern(rc, nearestRuin, 1);
+			}
+		}
+	}
+
     /**
      * Run a single turn for a Mopper.
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
      */
     public static void runMopper(RobotController rc) throws GameActionException{
-			//Sense Enemies to Flee
-			//RobotInfo[] enemyRobots = rc.senseNearbyRobots(1000, rc.getTeam().opponent());
-			RobotInfo[] friendlyRobots = rc.senseNearbyRobots(1000,rc.getTeam());
-			if (rc.getPaint() < 50){
-				rc.setIndicatorString("low health, moving to" + friendlyRobots[0].location);
-				moveTo(rc,friendlyRobots[0].getLocation());
-			} else if (friendlyRobots.length > 0){
-				for(RobotInfo robot:friendlyRobots){
-					if(robot.getType().equals(UnitType.MOPPER) && robot.getPaintAmount() < 50 || robot.getType().equals(UnitType.SPLASHER) && robot.getPaintAmount() < 200 || robot.getType().equals(UnitType.SOLDIER) && robot.getPaintAmount() < 105){
-						int paintAmt = 0;
-						if(robot.getType().equals(UnitType.MOPPER) && rc.canTransferPaint(robot.getLocation(), 10)){
-							paintAmt = 100 - robot.getPaintAmount();
-							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
-							rc.transferPaint(robot.location, paintAmt);
-						}
-						else if(robot.getType().equals(UnitType.SPLASHER)&& rc.canTransferPaint(robot.getLocation(), 10)){
-							paintAmt = 300 - robot.getPaintAmount();
-							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt + robot.getType());
-							rc.transferPaint(robot.location, paintAmt);
-						}
-						else if(robot.getType().equals(UnitType.SOLDIER)&& rc.canTransferPaint(robot.getLocation(), 10)){
-							paintAmt = 200 - robot.getPaintAmount();
-							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
-							rc.transferPaint(robot.location, paintAmt);
-						} else {
-							moveTo(rc,robot.getLocation());
-						}
+		MapLocation here = rc.getLocation();
+		MapLocation[] nearbyRuins = rc.senseNearbyRuins(-1);
+		MapLocation nearestRuin = null;
+		int nRuinDist = 9999;
+
+		for (MapLocation aLoc : nearbyRuins) {
+			int ruinDist = here.distanceSquaredTo(aLoc);
+			if (rc.senseRobotAtLocation(aLoc) == null && ruinDist < nRuinDist) {
+				nearestRuin = aLoc;
+				nRuinDist = ruinDist;
+			}
+		}
+		//Sense Enemies to Flee
+		//RobotInfo[] enemyRobots = rc.senseNearbyRobots(1000, rc.getTeam().opponent());
+		RobotInfo[] friendlyRobots = rc.senseNearbyRobots(-1,rc.getTeam());
+		RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1,rc.getTeam().opponent());
+		Boolean enemies = false;
+		if (enemyRobots.length > 0) {enemies = true;}
+		if (rc.getPaint() < 50){
+			rc.setIndicatorString("low health, moving to" + friendlyRobots[0].location);
+			moveTo(rc,friendlyRobots[0].getLocation());
+		} 
+		buildRuins(rc, nearestRuin, enemies);
+		if (friendlyRobots.length > 0){
+			for(RobotInfo robot:friendlyRobots){
+				if((robot.getType().equals(UnitType.SPLASHER) && robot.getPaintAmount() < 200) || (robot.getType().equals(UnitType.SOLDIER) && robot.getPaintAmount() < 105) || (!robot.getType().equals(UnitType.MOPPER) && !robot.getType().equals(UnitType.SOLDIER) && !robot.getType().equals(UnitType.SPLASHER) && robot.getPaintAmount() < 250)){
+					int paintAmt = 0;
+					if(robot.getType().equals(UnitType.MOPPER) && rc.canTransferPaint(robot.getLocation(), 10)){
+						paintAmt = Math.min(100 - robot.getPaintAmount(), 50);
+						rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
+						rc.transferPaint(robot.location, paintAmt);
+					}
+					else if(robot.getType().equals(UnitType.SPLASHER)&& rc.canTransferPaint(robot.getLocation(), 10)){
+						paintAmt = Math.min(300 - robot.getPaintAmount(), 50);
+						rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt + robot.getType());
+						rc.transferPaint(robot.location, paintAmt);
+					}
+					else if(robot.getType().equals(UnitType.SOLDIER)&& rc.canTransferPaint(robot.getLocation(), 10)){
+						paintAmt = Math.min(200 - robot.getPaintAmount(), 50);
+						rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
+						rc.transferPaint(robot.location, paintAmt);
+					} else {
+						moveTo(rc,robot.getLocation());
 					}
 				}
-			} else {
-				for (RobotInfo robot:friendlyRobots){
+			}
+		} else {
+			for (RobotInfo robot:friendlyRobots){
 				if(robot.getType().equals(UnitType.MOPPER) && robot.paintAmount >= 50){
 					rc.setIndicatorString("running from other moppers");
 					flee(rc, robot.location);
@@ -539,6 +591,18 @@ public class RobotPlayer {
 				distantAlly = aBot.location;
 			}
         }
+
+		MapLocation[] nearbyRuins = rc.senseNearbyRuins(-1);
+		MapLocation nearestRuin = null;
+		int nRuinDist = 9999;
+
+		for (MapLocation aLoc : nearbyRuins) {
+			int ruinDist = here.distanceSquaredTo(aLoc);
+			if (rc.senseRobotAtLocation(aLoc) == null && ruinDist < nRuinDist) {
+				nearestRuin = aLoc;
+				nRuinDist = ruinDist;
+			}
+		}
 		
 		// If not enough paint to safely attack/paint, go refill
 		if (rc.getPaint() < 150 && nearestTower != null) {
@@ -549,15 +613,7 @@ public class RobotPlayer {
             moveTo(rc,nearestMopper.location);
         }
         
-        // if see an enemy tower, attack it
-        if (nearestEnemyTower != null) {
-            rc.setIndicatorString("Attack!");
-            if (nETDist <= 3) {
-                rc.attack(nearestEnemyTower.location);
-            } else {
-                moveTo(rc, nearestEnemyTower.location);
-            }
-        }
+        buildRuins(rc, nearestRuin, enemies);
 
         // attachs enemy -- which splashers shouldnt do
         // for (RobotInfo aBot : nearbyRobots) {
@@ -620,25 +676,33 @@ public class RobotPlayer {
     }
 
     public static boolean moveTo(RobotController rc, MapLocation loc) throws GameActionException {
-    	return moveUnified(rc, loc, 3);
+		if (loc != null) {
+			return moveUnified(rc, loc, 3);
+		} else {return false;}
     }
     
     public static boolean moveTo(RobotController rc, MapLocation loc, int threshold) throws GameActionException {
-    	return moveUnified(rc, loc, threshold);
+    	if (loc != null) {
+			return moveUnified(rc, loc, threshold);
+		} else {return false;}
     }
     
     public static boolean flee(RobotController rc, MapLocation loc) throws GameActionException {
-    	MapLocation here = rc.getLocation();
-    	int dx = loc.x - here.x;
-    	int dy = loc.y - here.y;
-    	return moveUnified(rc, new MapLocation(here.x - 2*dx, here.y - 2*dy), 3);
+		if (loc != null) {
+			MapLocation here = rc.getLocation();
+			int dx = loc.x - here.x;
+			int dy = loc.y - here.y;
+			return moveUnified(rc, new MapLocation(here.x - 2*dx, here.y - 2*dy), 3);
+		} else {return false;}
     }
     
     public static boolean flee(RobotController rc, MapLocation loc, int threshold) throws GameActionException {
-    	MapLocation here = rc.getLocation();
-    	int dx = loc.x - here.x;
-    	int dy = loc.y - here.y;
-    	return moveUnified(rc, new MapLocation(here.x - 2*dx, here.y - 2*dy), threshold);
+		if (loc != null) {
+			MapLocation here = rc.getLocation();
+			int dx = loc.x - here.x;
+			int dy = loc.y - here.y;
+			return moveUnified(rc, new MapLocation(here.x - 2*dx, here.y - 2*dy), threshold);
+		} else {return false;}
     }
     
     public static boolean moveUnified(RobotController rc, MapLocation loc, int threshold) throws GameActionException {
@@ -679,7 +743,7 @@ public class RobotPlayer {
     	}
     	
     	if (useFakeSetPoint >= threshold) {
-    		rc.setIndicatorLine(here, fakeSetPoint, 0, 0, 0);
+    		//rc.setIndicatorLine(here, fakeSetPoint, 0, 0, 0);
         	return mooTwo(rc, fakeSetPoint);
     	}
     	return false;
@@ -1668,57 +1732,57 @@ public class RobotPlayer {
     
     public static boolean scoot(RobotController rc, Direction dir, Direction secDir, boolean restrictive) throws GameActionException {
     	//rc.setIndicatorString("Ultra Greedy " + dir.toString());
-    	if (rc.canMove(dir) || canFill(rc, rc.getLocation().add(dir))) {
+    	if (rc.canMove(dir)) {
     		fill(rc, rc.getLocation().add(dir));
     		rc.move(dir);
     		return true;
-        } else if (rc.canMove(secDir) || canFill(rc, rc.getLocation().add(secDir))) {
+        } else if (rc.canMove(secDir)) {
         	fill(rc, rc.getLocation().add(secDir));
     		rc.move(secDir);
     		return true;
         } else if (dir.rotateLeft() == secDir) {
-        	if (rc.canMove(dir.rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight()))) {
+        	if (rc.canMove(dir.rotateRight())) {
         		fill(rc, rc.getLocation().add(dir.rotateRight()));
         		rc.move(dir.rotateRight());
         		return true;
         	} else if (restrictive) {
         		return false;
-        	} else if (rc.canMove(dir.rotateLeft().rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft()))) {
+        	} else if (rc.canMove(dir.rotateLeft().rotateLeft())) {
         		fill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft()));
         		rc.move(dir.rotateLeft().rotateLeft());
         		return true;
-        	} else if (rc.canMove(dir.rotateRight().rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight().rotateRight()))) {
+        	} else if (rc.canMove(dir.rotateRight().rotateRight())) {
         		fill(rc, rc.getLocation().add(dir.rotateRight().rotateRight()));
         		rc.move(dir.rotateRight().rotateRight());
         		return true;
-        	} else if (rc.canMove(dir.rotateLeft().rotateLeft().rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft().rotateLeft()))) {
+        	} else if (rc.canMove(dir.rotateLeft().rotateLeft().rotateLeft())) {
         		fill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft().rotateLeft()));
         		rc.move(dir.rotateLeft().rotateLeft().rotateLeft());
         		return true;
-        	} else if (rc.canMove(dir.rotateRight().rotateRight().rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight().rotateRight().rotateRight()))) {
+        	} else if (rc.canMove(dir.rotateRight().rotateRight().rotateRight())) {
         		fill(rc, rc.getLocation().add(dir.rotateRight().rotateRight().rotateRight()));
         		rc.move(dir.rotateRight().rotateRight().rotateRight());
         		return true;
         	}
-        } else if (rc.canMove(dir.rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft()))) {
+        } else if (rc.canMove(dir.rotateLeft())) {
         	fill(rc, rc.getLocation().add(dir.rotateLeft()));
     		rc.move(dir.rotateLeft());
     		return true;
     	} else if (restrictive) {
     		return false;
-    	} else if (rc.canMove(dir.rotateRight().rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight().rotateRight()))) {
+    	} else if (rc.canMove(dir.rotateRight().rotateRight())) {
     		fill(rc, rc.getLocation().add(dir.rotateRight().rotateRight()));
     		rc.move(dir.rotateRight().rotateRight());
     		return true;
-    	} else if (rc.canMove(dir.rotateLeft().rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft()))) {
+    	} else if (rc.canMove(dir.rotateLeft().rotateLeft())) {
     		fill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft()));
     		rc.move(dir.rotateLeft().rotateLeft());
     		return true;
-    	} else if (rc.canMove(dir.rotateRight().rotateRight().rotateRight()) || canFill(rc, rc.getLocation().add(dir.rotateRight().rotateRight().rotateRight()))) {
+    	} else if (rc.canMove(dir.rotateRight().rotateRight().rotateRight())) {
     		fill(rc, rc.getLocation().add(dir.rotateRight().rotateRight().rotateRight()));
     		rc.move(dir.rotateRight().rotateRight().rotateRight());
     		return true;
-    	} else if (rc.canMove(dir.rotateLeft().rotateLeft().rotateLeft()) || canFill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft().rotateLeft()))) {
+    	} else if (rc.canMove(dir.rotateLeft().rotateLeft().rotateLeft())) {
     		fill(rc, rc.getLocation().add(dir.rotateLeft().rotateLeft().rotateLeft()));
     		rc.move(dir.rotateLeft().rotateLeft().rotateLeft());
     		return true;
@@ -1727,14 +1791,18 @@ public class RobotPlayer {
     }
 
 	public static boolean canFill(RobotController rc, MapLocation loc) throws GameActionException {
-		MapInfo locInfo = rc.senseMapInfo(loc);
-		return rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly();
+		if (rc.canSenseLocation(loc)) {
+			MapInfo locInfo = rc.senseMapInfo(loc);
+			return rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly();
+		} else {return false;}
 	}
 
 	public static void fill(RobotController rc, MapLocation loc) throws GameActionException {
-		MapInfo locInfo = rc.senseMapInfo(loc);
-		if (rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly()) {
-			rc.attack(loc);
+		if (rc.canSenseLocation(loc)) {
+			MapInfo locInfo = rc.senseMapInfo(loc);
+			if (rc.canAttack(loc) && locInfo.isPassable() && !locInfo.getPaint().isAlly()) {
+				rc.attack(loc);
+			}
 		}
 	}
 }
