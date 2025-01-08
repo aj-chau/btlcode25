@@ -7,7 +7,6 @@ import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapInfo;
 import battlecode.common.MapLocation;
-import battlecode.common.Message;
 import battlecode.common.PaintType;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
@@ -229,12 +228,49 @@ public class RobotPlayer {
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
      */
     public static void runTower(RobotController rc) throws GameActionException{
-        spawning(rc);
-        // Read incoming messages
-        Message[] messages = rc.readMessages(-1);
-        for (Message m : messages) {
-            System.out.println("Tower received message: '#" + m.getSenderID() + " " + m.getBytes());
-        }
+        // If a tower can be upgraded, upgrade it
+		if (rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER)) {
+			if (rc.canUpgradeTower(rc.getLocation())) {
+				rc.upgradeTower(rc.getLocation());
+			}
+		}
+		if (rc.getType().equals(UnitType.LEVEL_ONE_MONEY_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_MONEY_TOWER)) {
+			if (rc.canUpgradeTower(rc.getLocation())) {
+				rc.upgradeTower(rc.getLocation());
+			}
+		}
+		if (rc.getType().equals(UnitType.LEVEL_ONE_DEFENSE_TOWER)) {
+			if (rc.canUpgradeTower(rc.getLocation())) {
+				rc.upgradeTower(rc.getLocation());
+			}
+		}
+		// Track number of moppers near the tower
+		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(-1);
+		int mopperCount = 0;
+		for (RobotInfo aBot: nearbyRobots) {
+			if (aBot.type == UnitType.MOPPER) {
+				 mopperCount += 1;
+			}
+		}
+		// If there are less than x moppers near the tower, spawn more moppers
+		if ((rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_THREE_PAINT_TOWER)) && mopperCount < 3) {
+		for (Direction dir : directions) {
+			MapLocation nextLoc = rc.getLocation().add(dir);
+			rc.buildRobot(UnitType.MOPPER, nextLoc);
+		}
+		spawning(rc);
+
+		// If there's an enemy in range, AOE attack
+		for (RobotInfo aBot: nearbyRobots) {
+			if ((rc.getTeam() != aBot.team)) {
+				MapLocation attackSpot = aBot.location;
+				if (rc.canAttack(attackSpot)) {
+				rc.attack(attackSpot);
+				rc.attack(null);
+			}
+    	}
+			}
+		}
     }
 
 	
