@@ -449,6 +449,8 @@ public class RobotPlayer {
 			}
 		}
 
+		
+
         
         // Try to paint beneath us as we walk to avoid paint penalties.
         // Avoiding wasting paint by re-painting our own tiles.
