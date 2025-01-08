@@ -123,7 +123,7 @@ public class RobotPlayer {
         MapLocation[] robotRuinsArr = rc.senseNearbyRuins(1000); //no clue what the robot's vision radius is. 
 		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(1000);
 		if (rc.getLocation().equals(robotRuinsArr[0].translate(0,1))){
-			foundSRP(rc, robotRuinsArr[0].translate(0,1));
+			paintPattern(rc, robotRuinsArr[0]);
 		} else if(robotRuinsArr.length > 0){
 			moveTo(rc, robotRuinsArr[0]);
 			rc.setIndicatorString("Moving to Ruins");
@@ -153,12 +153,12 @@ public class RobotPlayer {
 		}
 	}
 
-	public static void foundSRP(RobotController rc, MapLocation fuck) throws GameActionException{
+	public static void paintPattern(RobotController rc, MapLocation center) throws GameActionException{
 		// Center coordinate is (1,0)
-	MapLocation center = fuck.translate(0, -1);
+		//MapLocation center = fuck.translate(0, -1);
 
 		// Check if robot is at center
-		if (rc.getLocation().equals(fuck)) {
+		if (rc.getLocation().equals(center)) {
 			// Paint own tile first
 
 			// Far North Row (y+2)
@@ -235,8 +235,6 @@ public class RobotPlayer {
 			if (centerNorthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
 				rc.attack(centerNorthWest);
 			}
-
-			// Center position handled above
 
 			MapLocation centerNorthEast = center.translate(1, 0);
 			MapInfo centerNorthEastPaint = rc.senseMapInfo(centerNorthEast);
