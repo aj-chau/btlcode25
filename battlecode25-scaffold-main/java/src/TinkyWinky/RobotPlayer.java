@@ -108,14 +108,10 @@ public class RobotPlayer {
         // Your code should never reach here (unless it's intentional)! Self-destruction imminent...
     }
 
-	public static void spawning(RobotController rc, int mopperCount) throws GameActionException {
-		if ((rc.getPaint() >= 300 && rc.getMoney() >= 500) || (rc.getRoundNum() < rc.getPaint())) {
+	public static void spawning(RobotController rc) throws GameActionException {
+		if ((rc.getPaint() >= 300 && rc.getMoney() >= 400) || (rc.getRoundNum() < rc.getPaint())) {
 			for (Direction dir : shuffleArray(directions,rng)) {
 				MapLocation nextLoc = rc.getLocation().add(dir);
-				// If there are less than x moppers near the tower, spawn more moppers
-				if ((rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_THREE_PAINT_TOWER)) && mopperCount < 1) {
-					rc.buildRobot(UnitType.MOPPER, nextLoc);
-				}
 				if (turnCount % 3 == 0 && rc.canBuildRobot(UnitType.SPLASHER, nextLoc )){
 					rc.buildRobot(UnitType.SPLASHER, nextLoc);
 				} else if (turnCount % 2 == 0 && rc.canBuildRobot(UnitType.MOPPER, nextLoc)){
@@ -258,7 +254,13 @@ public class RobotPlayer {
 				 mopperCount += 1;
 			}
 		}
-		spawning(rc, mopperCount);
+		// If there are less than x moppers near the tower, spawn more moppers
+		if ((rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_THREE_PAINT_TOWER)) && mopperCount < 3) {
+		for (Direction dir : directions) {
+			MapLocation nextLoc = rc.getLocation().add(dir);
+			rc.buildRobot(UnitType.MOPPER, nextLoc);
+		}
+		spawning(rc);
 
 		// If there's an enemy in range, AOE attack
 		for (RobotInfo aBot: nearbyRobots) {
@@ -267,7 +269,8 @@ public class RobotPlayer {
 				if (rc.canAttack(attackSpot)) {
 				rc.attack(attackSpot);
 				rc.attack(null);
-				}
+			}
+    	}
 			}
 		}
     }
@@ -455,7 +458,7 @@ public class RobotPlayer {
         // Move and attack randomly.
         Direction dir = directions[rng.nextInt(directions.length)];
         MapLocation nextLoc = rc.getLocation().add(dir);
-        //moveTo(rc,nextLoc);
+        moveTo(rc,nextLoc);
         if (rc.canMopSwing(dir)){
             rc.mopSwing(dir);
             System.out.println("Mop Swing! Booyah!");
