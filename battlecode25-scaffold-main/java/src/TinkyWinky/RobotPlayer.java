@@ -84,7 +84,7 @@ public class RobotPlayer {
                         default: runPre200Tower(rc); break;
                 }} else {
                     switch (rc.getType()){
-                        case SOLDIER: runSoldier(rc); break; 
+                        case SOLDIER: runPre200Soldier(rc); break; 
                         case MOPPER: runMopper(rc); break;
                         case SPLASHER: runSplasher(rc); break;
                         default: runTower(rc); break;
@@ -121,15 +121,15 @@ public class RobotPlayer {
     }
     public static void runPre200Soldier(RobotController rc) throws GameActionException{
         MapLocation[] robotRuinsArr = rc.senseNearbyRuins(1000); //no clue what the robot's vision radius is. 
-		RobotInfo[] nearbyRobots = rc.senseNearbyRobots(1000);
-		if (rc.getLocation().equals(robotRuinsArr[0].translate(0,1))){
-			paintPattern(rc, robotRuinsArr[0]);
-		} else if(robotRuinsArr.length > 0){
-			moveTo(rc, robotRuinsArr[0]);
-			rc.setIndicatorString("Moving to Ruins");
+		//RobotInfo[] nearbyRobots = rc.senseNearbyRobots(1000);
+
+		//rc.markResourcePattern(new MapLocation(6, 10));
+		if (rc.getLocation().equals(robotRuinsArr[0].translate(0, 1))){
+			paintPattern(rc, robotRuinsArr[0], 1);
+			rc.setIndicatorString("ALL GRAY WHY");
 		} else{
-			flee(rc, nearbyRobots[0].location);
-			rc.setIndicatorString("Fleeing!");
+			moveTo(rc, robotRuinsArr[0].translate(0, 1));
+			rc.setIndicatorString("Moving to Ruins");
 		}
 		//Start Painting the Pattern Around the Tower, Build Resource Tower if possible.
 
@@ -153,174 +153,82 @@ public class RobotPlayer {
 		}
 	}
 
-	public static void paintPattern(RobotController rc, MapLocation center) throws GameActionException{
-		// Center coordinate is (1,0)
-		//MapLocation center = fuck.translate(0, -1);
+	public static void paintPattern(RobotController rc, MapLocation center, int patternType) throws GameActionException{
+		rc.setIndicatorString("what the fuck");
+		 int[][] paintTowerPattern = {
+            {2, 1, 1, 1, 2},
+            {1, 2, 1, 2, 1},
+            {1, 1, 0, 1, 1},
+            {1, 2, 1, 2, 1},
+            {2, 1, 1, 1, 2}
+    	};
+		int[][] moneyTowerPattern = {
+            {1, 2, 2, 2, 1},
+            {2, 2, 1, 2, 2},
+            {2, 1, 0, 1, 2},
+            {2, 2, 1, 2, 2},
+            {1, 2, 2, 2, 1}
+    	};
+		int[][] defenseTowerPattern = {
+            {1, 1, 2, 1, 1},
+            {1, 2, 2, 2, 1},
+            {2, 2, 0, 2, 2},
+            {1, 2, 2, 2, 1},
+            {1, 1, 2, 1, 1}
+    	};
+		int[][] SRPPattern = {
+            {2, 1, 2, 1, 2},
+            {1, 2, 1, 2, 1},
+            {2, 1, 1, 1, 2},
+            {1, 2, 1, 2, 1},
+            {2, 1, 2, 1, 2}
+    	};
+		int[][] basePattern = {
+            {0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0},
+            {0, 0, 0, 0, 0}
+    	};
 
-		// Check if robot is at center
-		if (rc.getLocation().equals(center)) {
-			// Paint own tile first
-
-			// Far North Row (y+2)
-			MapLocation farNorthWest = center.translate(-2, 2);
-			MapInfo farNorthWestPaint = rc.senseMapInfo(farNorthWest);
-			if (farNorthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(farNorthWest, true);
-			}
-
-			MapLocation farNorthNorthWest = center.translate(-1, 2);
-			MapInfo farNorthNorthWestPaint = rc.senseMapInfo(farNorthNorthWest);
-			if (farNorthNorthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farNorthNorthWest);
-			}
-
-			MapLocation farNorth = center.translate(0, 2);
-			MapInfo farNorthPaint = rc.senseMapInfo(farNorth);
-			if (farNorthPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farNorth);
-			}
-
-			MapLocation farNorthNorthEast = center.translate(1, 2);
-			MapInfo farNorthNorthEastPaint = rc.senseMapInfo(farNorthNorthEast);
-			if (farNorthNorthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farNorthNorthEast);
-			}
-
-			MapLocation farNorthEast = center.translate(2, 2);
-			MapInfo farNorthEastPaint = rc.senseMapInfo(farNorthEast);
-			if (farNorthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(farNorthEast, true);
-			}
-
-			// North Row (y+1)
-			MapLocation northWest = center.translate(-2, 1);
-			MapInfo northWestPaint = rc.senseMapInfo(northWest);
-			if (northWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(northWest);
-			}
-
-			MapLocation northNorthWest = center.translate(-1, 1);
-			MapInfo northNorthWestPaint = rc.senseMapInfo(northNorthWest);
-			if (northNorthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(northNorthWest, true);
-			}
-
-			MapLocation north = center.translate(0, 1);
-			MapInfo northPaint = rc.senseMapInfo(north);
-			if (northPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(north);
-			}
-
-			MapLocation northNorthEast = center.translate(1, 1);
-			MapInfo northNorthEastPaint = rc.senseMapInfo(northNorthEast);
-			if (northNorthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(northNorthEast, true);
-			}
-
-			MapLocation northEast = center.translate(2, 1);
-			MapInfo northEastPaint = rc.senseMapInfo(northEast);
-			if (northEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(northEast);
-			}
-
-			// Center Row (y+0)
-			MapLocation centerWest = center.translate(-2, 0);
-			MapInfo centerWestPaint = rc.senseMapInfo(centerWest);
-			if (centerWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(centerWest);
-			}
-
-			MapLocation centerNorthWest = center.translate(-1, 0);
-			MapInfo centerNorthWestPaint = rc.senseMapInfo(centerNorthWest);
-			if (centerNorthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(centerNorthWest);
-			}
-
-			MapLocation centerNorthEast = center.translate(1, 0);
-			MapInfo centerNorthEastPaint = rc.senseMapInfo(centerNorthEast);
-			if (centerNorthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(centerNorthEast);
-			}
-
-			MapLocation centerEast = center.translate(2, 0);
-			MapInfo centerEastPaint = rc.senseMapInfo(centerEast);
-			if (centerEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(centerEast);
-			}
-
-			// South Row (y-1)
-			MapLocation southWest = center.translate(-2, -1);
-			MapInfo southWestPaint = rc.senseMapInfo(southWest);
-			if (southWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(southWest);
-			}
-
-			MapLocation southSouthWest = center.translate(-1, -1);
-			MapInfo southSouthWestPaint = rc.senseMapInfo(southSouthWest);
-			if (southSouthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(southSouthWest, true);
-			}
-
-			MapLocation south = center.translate(0, -1);
-			MapInfo southPaint = rc.senseMapInfo(south);
-			if (southPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(south);
-			}
-
-			MapLocation southSouthEast = center.translate(1, -1);
-			MapInfo southSouthEastPaint = rc.senseMapInfo(southSouthEast);
-			if (southSouthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(southSouthEast,true);
-			}
-
-			MapLocation southEast = center.translate(2, -1);
-			MapInfo southEastPaint = rc.senseMapInfo(southEast);
-			if (southEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(southEast);
-			}
-
-			// Far South Row (y-2)
-			MapLocation farSouthWest = center.translate(-2, -2);
-			MapInfo farSouthWestPaint = rc.senseMapInfo(farSouthWest);
-			if (farSouthWestPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(farSouthWest, true);
-			}
-
-			MapLocation farSouthSouthWest = center.translate(-1, -2);
-			MapInfo farSouthSouthWestPaint = rc.senseMapInfo(farSouthSouthWest);
-			if (farSouthSouthWestPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farSouthSouthWest);
-			}
-
-			MapLocation farSouth = center.translate(0, -2);
-			MapInfo farSouthPaint = rc.senseMapInfo(farSouth);
-			if (farSouthPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farSouth);
-			}
-
-			MapLocation farSouthSouthEast = center.translate(1, -2);
-			MapInfo farSouthSouthEastPaint = rc.senseMapInfo(farSouthSouthEast);
-			if (farSouthSouthEastPaint.getPaint() != PaintType.ALLY_PRIMARY) {
-				rc.attack(farSouthSouthEast);
-			}
-
-			MapLocation farSouthEast = center.translate(2, -2);
-			MapInfo farSouthEastPaint = rc.senseMapInfo(farSouthEast);
-			if (farSouthEastPaint.getPaint() != PaintType.ALLY_SECONDARY) {
-				rc.attack(farSouthEast, true);
-			}
+		if (patternType == 1){
+			basePattern = paintTowerPattern;
+		} else if (patternType == 2){
+			basePattern = moneyTowerPattern;
+		} else if (patternType == 3){
+			basePattern = defenseTowerPattern;
+		} else if (patternType == 4){
+			basePattern = SRPPattern;
 		}
-
-		int roundNum = rc.getRoundNum();
-		if (roundNum > 200 && rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER , center)){
-			rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
-		} else if(roundNum < 200 && rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER , center)){
-			rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
-		}else if (rc.canCompleteResourcePattern(center)){
-			rc.completeResourcePattern(center);
-		}
-
- 	}
+		
+			MapLocation topLeft = center.translate(-2, 2);
+    
+			// Iterate through the pattern
+			for (int dy = 0; dy < 5; dy++) {
+				for (int dx = 0; dx < 5; dx++) {
+					// Skip if no paint needed (0 in pattern)
+					if (basePattern[dy][dx] == 0) continue;
+					
+					// Calculate target location
+					MapLocation target = topLeft.translate(dx, -dy);
+					
+					// Check if we can sense this location
+					if (!rc.canSenseLocation(target)) continue;
+					
+					// Get current paint at location
+					MapInfo info = rc.senseMapInfo(target);
+					PaintType currentPaint = info.getPaint();
+					PaintType desiredPaint = (basePattern[dy][dx] == 2) ? 
+						PaintType.ALLY_SECONDARY : PaintType.ALLY_PRIMARY;
+					
+					// If paint doesn't match and we can attack this location
+					if (currentPaint != desiredPaint && rc.canAttack(target)) {
+						// Use secondary paint if pattern value is 2, otherwise primary
+						rc.attack(target, basePattern[dy][dx] == 2);
+					}
+				}
+			}
+    }
     /**
      * Run a single turn for towers.
      * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
