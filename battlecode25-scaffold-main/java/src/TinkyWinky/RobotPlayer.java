@@ -255,7 +255,6 @@ public class RobotPlayer {
         }
 		if (canComplete) {
 			switch (patternType) {
-				rc.setIndicatorString("Completing Tower Pattern at " + center);
 				case 1 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
 				case 2 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
 				case 3 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
