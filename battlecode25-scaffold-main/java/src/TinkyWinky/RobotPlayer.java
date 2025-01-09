@@ -240,28 +240,27 @@ public class RobotPlayer {
 		for (RobotInfo aBot: nearbyRobots) {
 			if (aBot.type == UnitType.MOPPER) {
 				 mopperCount += 1;
-			}
 		}
 		// If there are less than x moppers near the tower, spawn more moppers
 		if ((rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_THREE_PAINT_TOWER)) && mopperCount < 3) {
-		for (Direction dir : directions) {
-			MapLocation nextLoc = rc.getLocation().add(dir);
+			MapLocation nextLoc = rc.getLocation().add(Direction.SOUTH);
 			rc.buildRobot(UnitType.MOPPER, nextLoc);
 		}
+	}
 		spawning(rc);
-
-		// If there's an enemy in range, AOE attack
-		for (RobotInfo aBot: nearbyRobots) {
-			if ((rc.getTeam() != aBot.team)) {
-				MapLocation attackSpot = aBot.location;
+		for (RobotInfo enBot: nearbyRobots) {
+			// If there's an enemy in range, AOE attack
+			if ((rc.getTeam() != enBot.team)) {
+				MapLocation attackSpot = enBot.location;
 				if (rc.canAttack(attackSpot)) {
-				rc.attack(attackSpot);
-				rc.attack(null);
+					rc.attack(attackSpot);
+					rc.attack(null);
+			}
 			}
     	}
 			}
-		}	
-	}
+		
+	
 	
     /**
      * Run a single turn for a Soldier.
