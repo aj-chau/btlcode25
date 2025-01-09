@@ -514,31 +514,31 @@ public class RobotPlayer {
 		if (enemyRobots.length > 0) {enemies = true;}
 		buildRuins(rc, nearestRuin, enemies);
 		if (friendlyRobots.length > 0){
-			if (rc.getPaint() < 50){
-				rc.setIndicatorString("low health, moving to" + friendlyRobots[0].location);
-				moveTo(rc,friendlyRobots[0].getLocation());
-			} 
-			for(RobotInfo robot:friendlyRobots){
-				if((robot.getType().equals(UnitType.SPLASHER) && robot.getPaintAmount() < 200) || (robot.getType().equals(UnitType.SOLDIER) && robot.getPaintAmount() < 105) || (!robot.getType().equals(UnitType.MOPPER) && !robot.getType().equals(UnitType.SOLDIER) && !robot.getType().equals(UnitType.SPLASHER) && robot.getPaintAmount() < 250)){
-					int paintAmt;
-					if(robot.getType().equals(UnitType.MOPPER) && rc.canTransferPaint(robot.getLocation(), Math.min(100 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1))))){
-						paintAmt = Math.min(100 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1)));
-						rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
-						rc.transferPaint(robot.location, paintAmt);
-					}
-					else if(robot.getType().equals(UnitType.SPLASHER)&& rc.canTransferPaint(robot.getLocation(), Math.min(300 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1))))){
-						paintAmt = Math.min(300 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1)));
-						rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt + robot.getType());
-						rc.transferPaint(robot.location, paintAmt);
-					}
-					else if(robot.getType().equals(UnitType.SOLDIER)&& rc.canTransferPaint(robot.getLocation(), Math.min(200 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1))))){
-						paintAmt = Math.min(200 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1)));
-						rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
-						rc.transferPaint(robot.location, paintAmt);
-					} else {
-						moveTo(rc,robot.getLocation());
+			if (rc.getPaint() > 50){
+				for(RobotInfo robot:friendlyRobots){
+					if((robot.getType().equals(UnitType.MOPPER) && robot.getPaintAmount() < 50) || (robot.getType().equals(UnitType.SPLASHER) && robot.getPaintAmount() < 200) || (robot.getType().equals(UnitType.SOLDIER) && robot.getPaintAmount() < 105) || (!robot.getType().equals(UnitType.MOPPER) && !robot.getType().equals(UnitType.SOLDIER) && !robot.getType().equals(UnitType.SPLASHER) && robot.getPaintAmount() < 250)){
+						int paintAmt;
+						if(robot.getType().equals(UnitType.MOPPER) && rc.canTransferPaint(robot.getLocation(), Math.min(100 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1))))){
+							paintAmt = Math.min(100 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1)));
+							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
+							rc.transferPaint(robot.location, paintAmt);
+						}
+						else if(robot.getType().equals(UnitType.SPLASHER)&& rc.canTransferPaint(robot.getLocation(), Math.min(300 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1))))){
+							paintAmt = Math.min(300 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1)));
+							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt + robot.getType());
+							rc.transferPaint(robot.location, paintAmt);
+						}
+						else if(robot.getType().equals(UnitType.SOLDIER)&& rc.canTransferPaint(robot.getLocation(), Math.min(200 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1))))){
+							paintAmt = Math.min(200 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1)));
+							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
+							rc.transferPaint(robot.location, paintAmt);
+						} else {
+							moveTo(rc,robot.getLocation());
+						}
 					}
 				}
+			} else {
+				
 			}
 		}
 	}
