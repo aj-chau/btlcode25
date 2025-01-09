@@ -301,17 +301,19 @@ public class RobotPlayer {
 		spawning(rc, mopperCount);
 
 		// If there's an enemy in range, AOE attack
-		for (RobotInfo aBot: nearbyRobots) {
-			if ((rc.getTeam() != aBot.team)) {
-				MapLocation attackSpot = aBot.location;
+		int lowestHealth = 300;
+		for (RobotInfo emBot: nearbyRobots) {
+			if ((rc.getTeam() != emBot.team)) {
+				MapLocation attackSpot = emBot.location;
 				if (rc.canAttack(attackSpot)) {
-					rc.setIndicatorString("Attacking robot at " + aBot.location);
-				rc.attack(attackSpot);
-				rc.attack(null);
+					rc.setIndicatorString("Attacking robot at " + emBot.location);
+					rc.attack(attackSpot);
+					rc.attack(null);
+					}
 				}
 			}
-		}
-    }
+    	}
+	}
 
 	
     /**
