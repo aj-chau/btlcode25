@@ -113,14 +113,20 @@ public class RobotPlayer {
 				MapLocation nextLoc = rc.getLocation().add(dir);
 				// If there are less than x moppers near the tower, spawn more moppers
 				if ((rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_THREE_PAINT_TOWER)) && mopperCount < 1 && rc.getRoundNum() > 200) {
-					if (rc.canBuildRobot(UnitType.MOPPER, nextLoc)) {rc.buildRobot(UnitType.MOPPER, nextLoc);}
+					if (rc.canBuildRobot(UnitType.MOPPER, nextLoc)) {
+						rc.setIndicatorString("Building Mopper at " + nextLoc);
+						rc.buildRobot(UnitType.MOPPER, nextLoc);
+					}
 				}
 				if (turnCount % 3 == 0 && rc.canBuildRobot(UnitType.SPLASHER, nextLoc )){
+					rc.setIndicatorString("Building Splasher at " + nextLoc);
 					rc.buildRobot(UnitType.SPLASHER, nextLoc);
 				} else if (turnCount % 2 == 0 && rc.canBuildRobot(UnitType.MOPPER, nextLoc)){
+					rc.setIndicatorString("Building Mopper at " + nextLoc);
 					rc.buildRobot(UnitType.MOPPER, nextLoc);
 				}else{
 					if(rc.canBuildRobot(UnitType.SOLDIER, nextLoc)){
+						rc.setIndicatorString("Building Soldier at " + nextLoc);
 						rc.buildRobot(UnitType.SOLDIER, nextLoc);
 					}
 				}
@@ -227,7 +233,10 @@ public class RobotPlayer {
 								if(!moveTo(rc,target)){continue;}
 							}
 							// Use secondary paint if pattern value is 2, otherwise primary
-							if (rc.canAttack(target)) {rc.attack(target, basePattern[dy][dx] == 2);}
+							if (rc.canAttack(target)) {
+								rc.setIndicatorString("Painting 5x5 at " + target);
+								rc.attack(target, basePattern[dy][dx] == 2);
+							}
 							rc.setIndicatorDot(target, 1, 1, 1);
 						}
 					}
@@ -246,6 +255,7 @@ public class RobotPlayer {
         }
 		if (canComplete) {
 			switch (patternType) {
+				rc.setIndicatorString("Completing Tower Pattern at " + center);
 				case 1 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, center);
 				case 2 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_PAINT_TOWER, center);
 				case 3 -> rc.completeTowerPattern(UnitType.LEVEL_ONE_DEFENSE_TOWER, center);
@@ -264,16 +274,19 @@ public class RobotPlayer {
 		if (rc.getMoney() < rc.getRoundNum() * 2) {
 			if (rc.getType().equals(UnitType.LEVEL_ONE_PAINT_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_PAINT_TOWER)) {
 				if (rc.canUpgradeTower(rc.getLocation())) {
+					rc.setIndicatorString("Upgrading Paint Tower");
 					rc.upgradeTower(rc.getLocation());
 				}
 			}
 			if (rc.getType().equals(UnitType.LEVEL_ONE_MONEY_TOWER) || rc.getType().equals(UnitType.LEVEL_TWO_MONEY_TOWER)) {
 				if (rc.canUpgradeTower(rc.getLocation())) {
+					rc.setIndicatorString("Upgrading Money Tower");
 					rc.upgradeTower(rc.getLocation());
 				}
 			}
 			if (rc.getType().equals(UnitType.LEVEL_ONE_DEFENSE_TOWER)) {
 				if (rc.canUpgradeTower(rc.getLocation())) {
+					rc.setIndicatorString("Upgrading Defense Tower");
 					rc.upgradeTower(rc.getLocation());
 				}
 			}
@@ -294,6 +307,7 @@ public class RobotPlayer {
 			if ((rc.getTeam() != aBot.team)) {
 				MapLocation attackSpot = aBot.location;
 				if (rc.canAttack(attackSpot)) {
+					rc.setIndicatorString("Attacking robot at " + aBot.location);
 				rc.attack(attackSpot);
 				rc.attack(null);
 				}
@@ -512,7 +526,9 @@ public class RobotPlayer {
 		RobotInfo[] enemyRobots = rc.senseNearbyRobots(-1,rc.getTeam().opponent());
 		Boolean enemies = false;
 		if (enemyRobots.length > 0) {enemies = true;}
-		buildRuins(rc, nearestRuin, enemies);
+		if(nearbyRuins.length > 0){
+			buildRuins(rc, nearestRuin, enemies);
+		}
 		if (friendlyRobots.length > 0){
 			if (rc.getPaint() > 50){
 				for(RobotInfo robot:friendlyRobots){
@@ -521,25 +537,24 @@ public class RobotPlayer {
 						if(robot.getType().equals(UnitType.MOPPER) && rc.canTransferPaint(robot.getLocation(), Math.min(100 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1))))){
 							paintAmt = Math.min(100 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1)));
 							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
-							rc.transferPaint(robot.location, paintAmt);
+							refill(rc,robot.getLocation());
 						}
 						else if(robot.getType().equals(UnitType.SPLASHER)&& rc.canTransferPaint(robot.getLocation(), Math.min(300 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1))))){
 							paintAmt = Math.min(300 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1)));
 							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt + robot.getType());
-							rc.transferPaint(robot.location, paintAmt);
+							refill(rc,robot.getLocation());
 						}
 						else if(robot.getType().equals(UnitType.SOLDIER)&& rc.canTransferPaint(robot.getLocation(), Math.min(200 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1))))){
 							paintAmt = Math.min(200 - robot.getPaintAmount(), Math.min(50, Math.max(rc.getPaint()-50,1)));
 							rc.setIndicatorString("transferring paint to" + robot.location + "amount of paint" + paintAmt+ robot.getType());
-							rc.transferPaint(robot.location, paintAmt);
+							refill(rc,robot.getLocation());
 						} else {
 							moveTo(rc,robot.getLocation());
 						}
 					}
 				}
-			} else {
+			} 
 				
-			}
 		}
 	}
 
